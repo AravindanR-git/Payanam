@@ -1,0 +1,252 @@
+import "./Journey.css";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  Wallet,
+  Receipt,
+  Landmark,
+  Plus,
+  Users,
+  FileText,
+} from "lucide-react";
+
+import Button from "../../components/Button/Button";
+
+import TripRepository from "../../database/repositories/TripRepository";
+import ParticipantRepository from "../../database/repositories/ParticipantRepository";
+import ExpenseRepository from "../../database/repositories/ExpenseRepository";
+import AddExpenseSheet from "../../components/AddExpenseSheet/AddExpenseSheet";
+
+function Journey() {
+  const navigate = useNavigate();
+
+  const [trip, setTrip] = useState(null);
+  const [participants, setParticipants] = useState([]);
+  const [showExpenseSheet, setShowExpenseSheet] = useState(false);
+
+  const [expenses, setExpenses] = useState([]);
+const [recentExpenses, setRecentExpenses] = useState([]);
+
+  useEffect(() => {
+    loadJourney();
+  }, []);
+
+  const loadJourney = async () => {
+    try {
+      const activeTrip = await TripRepository.getActiveTrip();
+
+      if (!activeTrip) {
+        navigate("/");
+        return;
+      }
+
+      setTrip(activeTrip);
+
+      const memberList =
+        await ParticipantRepository.getParticipantsByTrip(
+          activeTrip.id
+        );
+
+      setParticipants(memberList);
+      const expenseList =
+  await ExpenseRepository.getExpensesByTrip(
+    activeTrip.id
+  );
+
+setExpenses(expenseList);
+
+const recent =
+  await ExpenseRepository.getRecentExpenses(
+    activeTrip.id
+  );
+
+setRecentExpenses(recent.slice(0, 5));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (!trip) {
+    return (
+      <div className="journey">
+        <h2>Loading Journey...</h2>
+      </div>
+    );
+  }
+
+  // These will come from the database later
+  const collected = participants.reduce(
+    (sum, item) =>
+      sum + Number(item.initialContribution || 0),
+    0
+  );
+
+  const spent = expenses.reduce(
+  (sum, expense) =>
+    sum + Number(expense.amount || 0),
+  0
+);
+
+  const balance = collected - spent;
+  const totalPeople = participants.reduce(
+  (total, participant) =>
+    total + Number(participant.memberCount || 1),
+  0
+);
+
+  return (
+    <div className="journey">
+
+      <button
+        className="back-btn"
+        onClick={() => navigate("/")}
+      >
+        <ArrowLeft size={20} />
+      </button>
+
+      <h1>{trip.tripName}</h1>
+
+      <p>
+        {trip.tripType === "friends"
+          ? "Friends Journey"
+          : "Family Journey"}
+      </p>
+
+      <div className="balance-card">
+
+        <div className="balance-item">
+          <Wallet size={22} />
+          <span>Collected</span>
+          <h2>
+            ₹{collected.toLocaleString("en-IN")}
+          </h2>
+        </div>
+
+        <div className="divider" />
+
+        <div className="balance-item">
+          <Receipt size={22} />
+          <span>Spent</span>
+          <h2>
+            ₹{spent.toLocaleString("en-IN")}
+          </h2>
+        </div>
+
+        <div className="divider" />
+
+        <div className="balance-item">
+          <Landmark size={22} />
+          <span>Balance</span>
+          <h2>
+            ₹{balance.toLocaleString("en-IN")}
+          </h2>
+        </div>
+
+      </div>
+
+      <h3>Journey Details</h3>
+
+      <div className="expense-card">
+
+        <div>
+          <h4>Participants</h4>
+
+<span>
+
+  {participants.length} Group
+  {participants.length !== 1 ? "s" : ""}
+
+  {" • "}
+
+  {totalPeople} People
+
+</span>
+        </div>
+
+        <strong>
+          👥
+        </strong>
+
+      </div>
+
+      <h3>Quick Actions</h3>
+
+      <div className="quick-grid">
+
+        <div
+          className="quick-card"
+          onClick={() => setShowExpenseSheet(true)}
+        >
+          <Plus size={28} />
+          <span>Add Expense</span>
+        </div>
+
+        <div
+          className="quick-card"
+          onClick={() => navigate("/participants")}
+        >
+          <Users size={28} />
+          <span>Participants</span>
+        </div>
+
+        <div
+          className="quick-card"
+          onClick={() =>
+    navigate("/expense-history")
+}
+        >
+          <FileText size={28} />
+          <span>Reports</span>
+        </div>
+
+      </div>
+
+      <div className="recent">
+
+        <h3>Recent Expenses</h3>
+
+        {recentExpenses.length === 0 ? (
+          <div className="expense-card">
+            <p>
+              No expenses added yet.
+            </p>
+          </div>
+        ) : (
+          recentExpenses.map((expense) => (
+            <div
+              key={expense.id}
+              className="expense-card"
+            >
+              <div>
+                <h4>{expense.itemName}</h4>
+                <span>
+  {new Date(
+    expense.expenseTime
+  ).toLocaleDateString()}
+</span>
+              </div>
+
+              <strong>
+                ₹{expense.amount}
+              </strong>
+            </div>
+          ))
+        )}
+
+      </div>
+
+      <Button>
+        End Journey
+      </Button>
+      <AddExpenseSheet
+  isOpen={showExpenseSheet}
+  onClose={() => setShowExpenseSheet(false)}
+  trip={trip}
+  onExpenseSaved={loadJourney}
+/>
+    </div>
+  );
+}
+
+export default Journey;

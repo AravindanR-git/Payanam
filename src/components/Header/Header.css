@@ -1,0 +1,37 @@
+.page-header{
+
+    margin-bottom:32px;
+
+}
+
+.page-header p{
+
+    color:#6E6E73;
+
+    font-size:16px;
+
+}
+
+.page-header h1{
+
+    margin-top:6px;
+
+    font-size:36px;
+
+    font-weight:700;
+
+    color:#1C1C1E;
+
+}
+
+.page-header span{
+
+    display:block;
+
+    margin-top:8px;
+
+    color:#8E8E93;
+
+    font-size:15px;
+
+}

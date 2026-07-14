@@ -1,0 +1,74 @@
+.category-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:16px;
+
+}
+
+.category-tile{
+
+    position:relative;
+
+    height:150px;
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+    cursor:pointer;
+
+    background-size:cover;
+
+    background-position:center;
+
+    transition:.25s;
+
+    box-shadow:0 10px 20px rgba(0,0,0,.15);
+
+}
+
+.category-tile:hover{
+
+    transform:translateY(-4px);
+
+}
+
+.category-overlay{
+
+    position:absolute;
+
+    inset:0;
+
+    background:linear-gradient(
+        rgba(0,0,0,.15),
+        rgba(0,0,0,.55)
+    );
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+.category-overlay h2{
+
+    background:rgba(0,0,0,.45);
+
+    padding:12px 24px;
+
+    border-radius:14px;
+
+    color:white;
+
+    font-size:20px;
+
+    font-weight:700;
+
+    backdrop-filter:blur(6px);
+
+}

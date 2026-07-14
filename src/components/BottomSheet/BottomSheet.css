@@ -1,0 +1,94 @@
+.sheet-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.25);
+
+    z-index:99;
+
+}
+
+.bottom-sheet{
+
+    position:fixed;
+
+    left:0;
+
+    right:0;
+
+    bottom:0;
+
+    background:#fff;
+
+    border-radius:28px 28px 0 0;
+
+    padding:22px;
+
+    min-height:260px;
+
+    z-index:100;
+
+    box-shadow:
+    0 -10px 30px rgba(0,0,0,.12);
+
+}
+
+.sheet-header{
+
+    display:flex;
+
+    justify-content:center;
+
+    position:relative;
+
+}
+
+.sheet-handle{
+
+    width:60px;
+
+    height:6px;
+
+    background:#D1D1D6;
+
+    border-radius:20px;
+
+}
+
+.close-btn{
+
+    position:absolute;
+
+    right:0;
+
+    top:-6px;
+
+    border:none;
+
+    background:none;
+
+    cursor:pointer;
+
+}
+
+.bottom-sheet h2{
+
+    margin-top:20px;
+
+    margin-bottom:20px;
+
+    font-size:24px;
+
+}
+
+.sheet-content{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:16px;
+
+}

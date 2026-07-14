@@ -1,0 +1,23 @@
+.empty-state{
+
+    text-align:center;
+
+    padding:24px 0 32px;
+
+}
+
+.empty-state h2{
+
+    font-size:26px;
+
+    margin-bottom:12px;
+
+}
+
+.empty-state p{
+
+    color:#6E6E73;
+
+    line-height:1.6;
+
+}

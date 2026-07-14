@@ -1,0 +1,147 @@
+.participants-page{
+
+    padding:20px;
+
+}
+
+.participant-summary{
+
+    margin:20px 0;
+
+    padding:18px;
+
+    background:white;
+
+    border-radius:18px;
+
+    box-shadow:0 5px 18px rgba(0,0,0,.08);
+
+}
+
+.participant-card{
+
+    display:flex;
+
+    gap:18px;
+
+    background:white;
+
+    border-radius:18px;
+
+    padding:18px;
+
+    margin-bottom:18px;
+
+    box-shadow:0 5px 18px rgba(0,0,0,.08);
+
+}
+
+.avatar{
+
+    width:56px;
+
+    height:56px;
+
+    border-radius:50%;
+
+    background:#0A84FF;
+
+    color:white;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:22px;
+
+    font-weight:700;
+
+}
+
+.participant-content{
+
+    flex:1;
+
+}
+
+.info-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-top:10px;
+
+}
+
+.status{
+
+    color:#2ecc71;
+
+}
+
+.action-row{
+
+    display:flex;
+
+    gap:10px;
+
+    margin-top:18px;
+
+}
+
+.icon-btn{
+
+    width:40px;
+
+    height:40px;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    background:#F3F3F3;
+
+}
+
+.delete{
+
+    color:#ff3b30;
+
+}
+
+.floating-btn{
+
+    position:fixed;
+
+    right:25px;
+
+    bottom:30px;
+
+    width:60px;
+
+    height:60px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:#0A84FF;
+
+    color:white;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    cursor:pointer;
+
+    box-shadow:0 10px 25px rgba(10,132,255,.3);
+
+}
