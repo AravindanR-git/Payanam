@@ -1,0 +1,103 @@
+*,
+*::before,
+*::after{
+
+    margin:0;
+    padding:0;
+
+    box-sizing:border-box;
+
+}
+
+html{
+
+    width:100%;
+    height:100%;
+
+    overflow:hidden;
+
+    -webkit-text-size-adjust:100%;
+
+}
+
+body{
+
+    width:100%;
+    height:100%;
+
+    overflow:hidden;
+
+    background:var(--color-background);
+
+    color:var(--color-text);
+
+    font-family:
+        "SF Pro Display",
+        "Inter",
+        sans-serif;
+
+    -webkit-font-smoothing:antialiased;
+
+    text-rendering:optimizeLegibility;
+
+}
+
+#root{
+
+    width:100%;
+    height:100%;
+
+    overflow:hidden;
+
+}
+
+img{
+
+    display:block;
+
+    max-width:100%;
+
+}
+
+button,
+input,
+textarea,
+select{
+
+    font:inherit;
+
+    outline:none;
+
+}
+
+button{
+
+    border:none;
+
+    background:none;
+
+    cursor:pointer;
+
+    -webkit-tap-highlight-color:transparent;
+
+}
+
+input{
+
+    background:transparent;
+
+}
+
+a{
+
+    color:inherit;
+
+    text-decoration:none;
+
+}
+
+ul{
+
+    list-style:none;
+
+}

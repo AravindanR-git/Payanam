@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Pencil, Trash2, User } from "lucide-react";
 
 import BottomSheet from "../BottomSheet/BottomSheet";
 import Button from "../Button/Button";
+import Input from "../Input/Input";
+import Card from "../Card/Card";
 
 import "./FriendsSection.css";
 
@@ -22,10 +24,12 @@ function FriendsSection({
 
   const openAdd = () => {
     setEditingId(null);
+
     setForm({
       name: "",
       contribution: defaultContributionPerPerson,
     });
+
     setShowSheet(true);
   };
 
@@ -37,7 +41,7 @@ function FriendsSection({
 
   const saveMember = () => {
     if (!form.name.trim()) {
-      alert("Please enter member name");
+      alert("Please enter member name.");
       return;
     }
 
@@ -70,45 +74,85 @@ function FriendsSection({
 
   return (
     <>
+      <div className="friends-header">
 
-      <div className="section-header">
+        <div>
+          <h2>Members</h2>
+          <p>{members.length} Member(s)</p>
+        </div>
 
-        <h3>
-          Members ({members.length})
-        </h3>
+        <Button
+          size="sm"
+          onClick={openAdd}
+        >
+          <Plus size={16} />
+          &nbsp; Add
+        </Button>
 
       </div>
 
       {members.length === 0 && (
-        <div className="empty-box">
-          No members added yet.
-        </div>
-      )}
+        <Card>
 
-      {members.map((member) => (
-        <div
-          className="member-card"
-          key={member.id}
-        >
-          <div>
+          <div className="friends-empty">
 
-            <h4>{member.name}</h4>
+            <User size={42} />
 
-            <span>
-              ₹{member.contribution.toLocaleString("en-IN")}
-            </span>
+            <h3>No Members Added</h3>
+
+            <p>
+              Tap <strong>Add</strong> to include your
+              first traveller.
+            </p>
 
           </div>
 
-          <div className="actions">
+        </Card>
+      )}
+
+      {members.map((member) => (
+
+        <Card
+          key={member.id}
+          className="friend-card"
+        >
+
+          <div className="friend-left">
+
+            <div className="avatar">
+
+              {member.name.charAt(0).toUpperCase()}
+
+            </div>
+
+            <div>
+
+              <h4>{member.name}</h4>
+
+              <span>
+                ₹
+                {Number(
+                  member.contribution
+                ).toLocaleString("en-IN")}
+              </span>
+
+            </div>
+
+          </div>
+
+          <div className="friend-actions">
 
             <button
-              onClick={() => openEdit(member)}
+              className="icon-btn"
+              onClick={() =>
+                openEdit(member)
+              }
             >
               <Pencil size={18} />
             </button>
 
             <button
+              className="icon-btn delete"
               onClick={() =>
                 deleteMember(member.id)
               }
@@ -118,30 +162,26 @@ function FriendsSection({
 
           </div>
 
-        </div>
-      ))}
+        </Card>
 
-      <button
-        className="add-member-btn"
-        onClick={openAdd}
-      >
-        <Plus size={18} />
-        Add Member
-      </button>
+      ))}
 
       <BottomSheet
         isOpen={showSheet}
-        onClose={() => setShowSheet(false)}
+        onClose={() =>
+          setShowSheet(false)
+        }
         title={
           editingId
             ? "Edit Member"
             : "Add Member"
         }
       >
-        <input
-          className="sheet-input"
-          placeholder="Member Name"
+
+        <Input
+          label="Member Name"
           value={form.name}
+          placeholder="Enter member name"
           onChange={(e) =>
             setForm({
               ...form,
@@ -150,10 +190,9 @@ function FriendsSection({
           }
         />
 
-        <input
-          className="sheet-input"
+        <Input
+          label="Contribution"
           type="number"
-          placeholder="Initial Contribution"
           value={form.contribution}
           onChange={(e) =>
             setForm({
@@ -165,12 +204,16 @@ function FriendsSection({
           }
         />
 
-        <Button onClick={saveMember}>
-          {editingId ? "Update" : "Save"}
+        <Button
+          fullWidth
+          onClick={saveMember}
+        >
+          {editingId
+            ? "Update Member"
+            : "Save Member"}
         </Button>
 
       </BottomSheet>
-
     </>
   );
 }

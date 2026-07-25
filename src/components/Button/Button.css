@@ -1,127 +1,91 @@
-.btn{
-
-    width:100%;
-
-    min-height:56px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:10px;
+.app-button{
 
     border:none;
 
-    outline:none;
-
-    border-radius:18px;
-
-    font-size:16px;
-
-    font-weight:600;
+    border-radius:var(--radius-lg);
 
     cursor:pointer;
 
-    transition:.25s;
+    font-weight:600;
 
-    user-select:none;
-
-}
-
-.btn:active{
-
-    transform:scale(.98);
+    transition:all var(--animation-normal);
 
 }
 
-.btn:disabled{
+.app-button-md{
 
-    opacity:.5;
+    height:56px;
+
+    padding:0 22px;
+
+    font-size:16px;
+
+}
+
+.app-button-sm{
+
+    height:44px;
+
+    padding:0 16px;
+
+    font-size:14px;
+
+}
+
+.app-button-lg{
+
+    height:62px;
+
+    padding:0 26px;
+
+    font-size:17px;
+
+}
+
+.app-button-primary{
+
+    background:var(--color-primary);
+
+    color:white;
+
+}
+
+.app-button-primary:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:var(--shadow-md);
+
+}
+
+.app-button-outline{
+
+    background:transparent;
+
+    color:var(--color-primary);
+
+    border:1px solid var(--color-primary);
+
+}
+
+.app-button-danger{
+
+    background:var(--color-danger);
+
+    color:white;
+
+}
+
+.app-button-full{
+
+    width:100%;
+
+}
+
+.app-button:disabled{
+
+    opacity:.55;
 
     cursor:not-allowed;
-
-    transform:none;
-
-}
-
-/* ---------- Primary ---------- */
-
-.btn-primary{
-
-    background:linear-gradient(
-        180deg,
-        #2F8CFF,
-        #0A84FF
-    );
-
-    color:white;
-
-    box-shadow:
-        0 12px 24px rgba(10,132,255,.25);
-
-}
-
-.btn-primary:hover{
-
-    filter:brightness(.97);
-
-}
-
-/* ---------- Secondary ---------- */
-
-.btn-secondary{
-
-    background:white;
-
-    color:#1C1C1E;
-
-    border:1px solid #E5E5EA;
-
-}
-
-/* ---------- Danger ---------- */
-
-.btn-danger{
-
-    background:#FF453A;
-
-    color:white;
-
-    margin-top:12px;
-
-    box-shadow:
-        0 10px 20px rgba(255,69,58,.22);
-
-}
-
-.btn-danger:hover{
-
-    filter:brightness(.96);
-
-}
-
-/* ---------- Success ---------- */
-
-.btn-success{
-
-    background:#34C759;
-
-    color:white;
-
-}
-
-/* ---------- Glass ---------- */
-
-.btn-glass{
-
-    background:rgba(255,255,255,.7);
-
-    backdrop-filter:blur(18px);
-
-    border:1px solid rgba(255,255,255,.35);
-
-    color:#1C1C1E;
 
 }

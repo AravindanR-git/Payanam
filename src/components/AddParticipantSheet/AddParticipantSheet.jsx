@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import BottomSheet from "../BottomSheet/BottomSheet";
 import Button from "../Button/Button";
@@ -9,6 +9,7 @@ function AddParticipantSheet({
   isOpen,
   onClose,
   trip,
+  participant = null,
   onSaved,
 }) {
 
@@ -26,43 +27,100 @@ function AddParticipantSheet({
   const [contribution, setContribution] =
     useState("");
 
+  useEffect(() => {
+
+    if (!isOpen) return;
+
+    if (participant) {
+
+      setName(participant.name || "");
+
+      setAdults(participant.adults || 1);
+
+      setChildren(participant.children || 0);
+
+      setContribution(
+        participant.initialContribution || ""
+      );
+
+    } else {
+
+      setName("");
+
+      setAdults(1);
+
+      setChildren(0);
+
+      setContribution("");
+
+    }
+
+  }, [participant, isOpen]);
+
   const saveParticipant = async () => {
 
     if (!name.trim()) {
+
       alert(
         isFamilyTrip
           ? "Enter family name."
           : "Enter friend name."
       );
+
       return;
+
     }
 
-    await ParticipantRepository.createParticipant({
-
-      tripId: trip.id,
+    const data = {
 
       name,
 
-      adults: isFamilyTrip ? adults : null,
+      adults:
+        isFamilyTrip
+          ? adults
+          : null,
 
-      children: isFamilyTrip ? children : null,
+      children:
+        isFamilyTrip
+          ? children
+          : null,
 
-      memberCount: isFamilyTrip
-        ? adults + children
-        : 1,
+      memberCount:
+        isFamilyTrip
+          ? adults + children
+          : 1,
 
       initialContribution:
         Number(contribution) || 0,
 
-    });
+    };
 
-    setName("");
-    setAdults(1);
-    setChildren(0);
-    setContribution("");
+    if (participant) {
+
+      await ParticipantRepository.updateParticipant(
+
+        participant.id,
+
+        data
+
+      );
+
+    } else {
+
+      await ParticipantRepository.createParticipant({
+
+        tripId: trip.id,
+
+        ...data,
+
+      });
+
+    }
 
     if (onSaved) {
+
       await onSaved();
+
     }
 
     onClose();
@@ -75,9 +133,17 @@ function AddParticipantSheet({
       isOpen={isOpen}
       onClose={onClose}
       title={
-        isFamilyTrip
-          ? "Add Family"
-          : "Add Friend"
+
+        participant
+
+          ? isFamilyTrip
+            ? "Edit Family"
+            : "Edit Friend"
+
+          : isFamilyTrip
+            ? "Add Family"
+            : "Add Friend"
+
       }
     >
 
@@ -107,6 +173,7 @@ function AddParticipantSheet({
               <div className="counter">
 
                 <button
+                  type="button"
                   onClick={() =>
                     setAdults(
                       Math.max(
@@ -120,12 +187,17 @@ function AddParticipantSheet({
                 </button>
 
                 <strong>
+
                   {adults}
+
                 </strong>
 
                 <button
+                  type="button"
                   onClick={() =>
-                    setAdults(adults + 1)
+                    setAdults(
+                      adults + 1
+                    )
                   }
                 >
                   +
@@ -142,6 +214,7 @@ function AddParticipantSheet({
               <div className="counter">
 
                 <button
+                  type="button"
                   onClick={() =>
                     setChildren(
                       Math.max(
@@ -155,12 +228,17 @@ function AddParticipantSheet({
                 </button>
 
                 <strong>
+
                   {children}
+
                 </strong>
 
                 <button
+                  type="button"
                   onClick={() =>
-                    setChildren(children + 1)
+                    setChildren(
+                      children + 1
+                    )
                   }
                 >
                   +
@@ -182,14 +260,26 @@ function AddParticipantSheet({
         placeholder="Contribution"
         value={contribution}
         onChange={(e)=>
-          setContribution(e.target.value)
+          setContribution(
+            e.target.value
+          )
         }
       />
 
       <Button
         onClick={saveParticipant}
       >
-        Save Participant
+
+        {
+
+          participant
+
+            ? "Update Participant"
+
+            : "Save Participant"
+
+        }
+
       </Button>
 
     </BottomSheet>

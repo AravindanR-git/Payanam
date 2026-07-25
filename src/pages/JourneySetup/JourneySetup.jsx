@@ -1,11 +1,18 @@
 import "./JourneySetup.css";
+
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../components/Button/Button";
+import Input from "../../components/Input/Input";
+import SegmentedControl from "../../components/SegmentedControl/SegmentedControl";
+import PageHeader from "../../components/PageHeader/PageHeader";
+import JourneySummaryCard from "../../components/JourneySummaryCard/JourneySummaryCard";
+
 import FriendsSection from "../../components/FriendsSection/FriendsSection";
 import FamilySection from "../../components/FamilySection/FamilySection";
+
 import TripRepository from "../../database/repositories/TripRepository";
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
 
@@ -44,9 +51,9 @@ function JourneySetup() {
     0
   );
 
-  const createJourney = async  () => {
+  const createJourney = async () => {
     if (!tripName.trim()) {
-      alert("Please enter a trip name.");
+      alert("Please enter a journey name.");
       return;
     }
 
@@ -60,131 +67,73 @@ function JourneySetup() {
       return;
     }
 
-    // Backend/localStorage will come later
- try {
-
-  const trip = await TripRepository.createTrip({
-    userId: "demo-user",
-    tripName,
-    tripType: tripGroup,
-    defaultContributionPerPerson,
-  });
-
-  if (tripGroup === "friends") {
-
-    for (const member of friends) {
-
-      await ParticipantRepository.createParticipant({
-        tripId: trip.id,
-        type: "friend",
-        name: member.name,
-        adults: 1,
-        children: 0,
-        initialContribution: member.contribution,
+    try {
+      const trip = await TripRepository.createTrip({
+        userId: "demo-user",
+        tripName,
+        tripType: tripGroup,
+        defaultContributionPerPerson,
       });
 
+      if (tripGroup === "friends") {
+        for (const member of friends) {
+          await ParticipantRepository.createParticipant({
+            tripId: trip.id,
+            type: "friend",
+            name: member.name,
+            adults: 1,
+            children: 0,
+            initialContribution: member.contribution,
+          });
+        }
+      } else {
+        for (const family of families) {
+          await ParticipantRepository.createParticipant({
+            tripId: trip.id,
+            type: "family",
+            name: family.familyName,
+            adults: family.adults,
+            children: family.children,
+            initialContribution: family.contribution,
+          });
+        }
+      }
+
+      navigate("/journey");
+    } catch (err) {
+      console.error(err);
+      alert("Unable to create journey.");
     }
-
-  } else {
-
-    for (const family of families) {
-
-      await ParticipantRepository.createParticipant({
-        tripId: trip.id,
-        type: "family",
-        name: family.familyName,
-        adults: family.adults,
-        children: family.children,
-        initialContribution: family.contribution,
-      });
-
-    }
-
-  }
-
-  navigate("/journey");
-
-} catch (error) {
-
-  console.error(error);
-
-  alert("Unable to create journey.");
-
-}
-
-    
   };
 
   return (
-    <div className="journey-setup">
+    <div className="journey-page">
 
       <button
-        className="back-btn"
+        className="back-button"
         onClick={() => navigate(-1)}
       >
         <ArrowLeft size={20} />
       </button>
 
-      <h1>Start a New Journey</h1>
+      <PageHeader
+        title="Create Journey"
+        subtitle="Set up your new trip"
+      />
 
-      <div className="form-group">
+      <div className="journey-card">
 
-        <label>Journey Name</label>
-
-        <input
-          type="text"
-          placeholder="Ooty Trip 2026"
+        <Input
+          label="Journey Name"
           value={tripName}
-          onChange={(e) => setTripName(e.target.value)}
+          placeholder="Ooty Friends Trip"
+          onChange={(e) =>
+            setTripName(e.target.value)
+          }
         />
 
-      </div>
-
-      <div className="form-group">
-
-        <label>Journey Type</label>
-
-        <div className="toggle">
-
-          <button
-            type="button"
-            className={
-              tripGroup === "friends"
-                ? "active"
-                : ""
-            }
-            onClick={() =>
-              setTripGroup("friends")
-            }
-          >
-            Friends
-          </button>
-
-          <button
-            type="button"
-            className={
-              tripGroup === "family"
-                ? "active"
-                : ""
-            }
-            onClick={() =>
-              setTripGroup("family")
-            }
-          >
-            Family
-          </button>
-
-        </div>
-
-      </div>
-
-      <div className="form-group">
-
-        <label>
-          Default Contribution Per Person
-        </label>
-
-        <input
+        <Input
+          label="Contribution Per Person"
           type="number"
           value={defaultContributionPerPerson}
           onChange={(e) =>
@@ -193,6 +142,26 @@ function JourneySetup() {
             )
           }
         />
+
+        <div className="segment-block">
+
+          <label className="segment-label">
+            Journey Type
+          </label>
+
+          <SegmentedControl
+            options={["Friends", "Family"]}
+            value={
+              tripGroup === "friends"
+                ? "Friends"
+                : "Family"
+            }
+            onChange={(value) =>
+              setTripGroup(value.toLowerCase())
+            }
+          />
+
+        </div>
 
       </div>
 
@@ -214,51 +183,25 @@ function JourneySetup() {
         />
       )}
 
-      <div className="summary-card">
+      <JourneySummaryCard
+        tripGroup={tripGroup}
+        friends={friends}
+        families={families}
+        totalAdults={totalAdults}
+        totalChildren={totalChildren}
+        totalCollected={totalCollected}
+      />
 
-        <h3>Journey Summary</h3>
+      <div className="create-button">
 
-        {tripGroup === "friends" ? (
-          <>
-            <p>
-              Participants : {friends.length}
-            </p>
-          </>
-        ) : (
-          <>
-            <p>
-              Families : {families.length}
-            </p>
-
-            <p>
-              Adults : {totalAdults}
-            </p>
-
-            <p>
-              Children : {totalChildren}
-            </p>
-
-            <p>
-              Total People :{" "}
-              {totalAdults + totalChildren}
-            </p>
-          </>
-        )}
-
-        <hr />
-
-        <h2>
-          ₹
-          {totalCollected.toLocaleString(
-            "en-IN"
-          )}
-        </h2>
+        <Button
+          fullWidth
+          onClick={createJourney}
+        >
+          Create Journey
+        </Button>
 
       </div>
-
-      <Button onClick={createJourney}>
-        Create Journey
-      </Button>
 
     </div>
   );

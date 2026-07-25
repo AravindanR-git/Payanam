@@ -7,13 +7,12 @@ import ExpenseRepository from "../../database/repositories/ExpenseRepository";
 function DetailsStep({
   trip,
   category,
-  item,
+  selectedItems = [],
   expense = null,
   onBack,
   onClose,
   onSaved,
 }) {
-
   const [amount, setAmount] = useState(
     expense?.amount || ""
   );
@@ -22,23 +21,26 @@ function DetailsStep({
     expense?.notes || ""
   );
 
-  const [participants, setParticipants] = useState([]);
+  const [participants, setParticipants] =
+    useState([]);
 
-  const [paymentSource, setPaymentSource] = useState(
-    expense?.paymentSource || "fund"
-  );
-
-  const [paidByParticipantId, setPaidByParticipantId] =
+  const [paymentSource, setPaymentSource] =
     useState(
-      expense?.paidByParticipantId || ""
+      expense?.paymentSource || "fund"
     );
+
+  const [
+    paidByParticipantId,
+    setPaidByParticipantId,
+  ] = useState(
+    expense?.paidByParticipantId || ""
+  );
 
   useEffect(() => {
     loadParticipants();
   }, []);
 
   const loadParticipants = async () => {
-
     const list =
       await ParticipantRepository.getParticipantsByTrip(
         trip.id
@@ -49,18 +51,15 @@ function DetailsStep({
     if (!expense && list.length > 0) {
       setPaidByParticipantId(list[0].id);
     }
-
   };
 
   const saveExpense = async () => {
-
     if (!amount || Number(amount) <= 0) {
       alert("Please enter a valid amount.");
       return;
     }
 
     const expenseData = {
-
       amount: Number(amount),
 
       notes,
@@ -71,34 +70,28 @@ function DetailsStep({
         paymentSource === "participant"
           ? paidByParticipantId
           : null,
-
     };
 
     if (expense) {
-
       await ExpenseRepository.updateExpense(
         expense.id,
         expenseData
       );
-
     } else {
-
       await ExpenseRepository.createExpense({
-
         tripId: trip.id,
 
         categoryId: category.id,
+
         categoryName: category.name,
 
-        itemId: item.id,
-        itemName: item.name,
+        selectedItems,
 
-        expenseTime: new Date().toISOString(),
+        expenseTime:
+          new Date().toISOString(),
 
         ...expenseData,
-
       });
-
     }
 
     if (onSaved) {
@@ -106,11 +99,9 @@ function DetailsStep({
     }
 
     onClose();
-
   };
 
   const deleteExpense = async () => {
-
     if (!expense) return;
 
     const ok = window.confirm(
@@ -128,13 +119,10 @@ function DetailsStep({
     }
 
     onClose();
-
   };
 
   return (
-
     <div>
-
       <button
         type="button"
         className="back-step-btn"
@@ -143,7 +131,47 @@ function DetailsStep({
         ← Back
       </button>
 
-      <h3>{item?.name}</h3>
+      <h3>{category?.name}</h3>
+
+      {selectedItems.length > 0 && (
+        <div
+          style={{
+            marginBottom: "16px",
+          }}
+        >
+          <strong>
+            Selected Items
+          </strong>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+              marginTop: "8px",
+            }}
+          >
+            {selectedItems.map((item) => (
+              <span
+                key={item.id}
+                style={{
+                  padding:
+                    "6px 12px",
+                  borderRadius:
+                    "20px",
+                  background:
+                    "#eef4ff",
+                  color: "#2563eb",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
+                {item.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <input
         className="sheet-input"
@@ -165,96 +193,74 @@ function DetailsStep({
       />
 
       <div className="payment-card">
-
         <h4>Money Source</h4>
 
         <div
           className="payment-source"
           onClick={() =>
             setPaymentSource(
-              paymentSource === "fund"
+              paymentSource ===
+                "fund"
                 ? "participant"
                 : "fund"
             )
           }
         >
-
-          {
-            paymentSource === "fund"
-              ? "💰 Trip Fund"
-              : "👤 Personal Wallet"
-          }
-
+          {paymentSource ===
+          "fund"
+            ? "💰 Trip Fund"
+            : "👤 Personal Wallet"}
         </div>
 
-        {
-
-          paymentSource === "participant" && (
-
-            <select
-              className="sheet-input"
-              value={paidByParticipantId}
-              onChange={(e) =>
-                setPaidByParticipantId(
-                  e.target.value
-                )
-              }
-            >
-
-              {
-
-                participants.map((participant) => (
-
-                  <option
-                    key={participant.id}
-                    value={participant.id}
-                  >
-                    {participant.name}
-                  </option>
-
-                ))
-
-              }
-
-            </select>
-
-          )
-
-        }
-
+        {paymentSource ===
+          "participant" && (
+          <select
+            className="sheet-input"
+            value={
+              paidByParticipantId
+            }
+            onChange={(e) =>
+              setPaidByParticipantId(
+                e.target.value
+              )
+            }
+          >
+            {participants.map(
+              (participant) => (
+                <option
+                  key={
+                    participant.id
+                  }
+                  value={
+                    participant.id
+                  }
+                >
+                  {participant.name}
+                </option>
+              )
+            )}
+          </select>
+        )}
       </div>
 
       <Button onClick={saveExpense}>
-
-        {
-
-          expense
-            ? "Update Expense"
-            : "Save Expense"
-
-        }
-
+        {expense
+          ? "Update Expense"
+          : "Save Expense"}
       </Button>
 
-      {
-
-        expense && (
-
-          <Button
-    variant="danger"
-    onClick={deleteExpense}
->
-    Delete Expense
-</Button>
-
-        )
-
-      }
-
+      {expense && (
+        <Button
+          variant="danger"
+          onClick={
+            deleteExpense
+          }
+        >
+          Delete Expense
+        </Button>
+      )}
     </div>
-
   );
-
 }
 
 export default DetailsStep;

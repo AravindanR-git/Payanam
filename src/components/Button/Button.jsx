@@ -5,14 +5,21 @@ function Button({
   onClick,
   type = "button",
   variant = "primary",
+  size = "md",
   disabled = false,
+  fullWidth = false,
 }) {
   return (
     <button
-      className={`btn btn-${variant}`}
-      onClick={onClick}
       type={type}
+      onClick={onClick}
       disabled={disabled}
+      className={`
+        app-button
+        app-button-${variant}
+        app-button-${size}
+        ${fullWidth ? "app-button-full" : ""}
+      `}
     >
       {children}
     </button>

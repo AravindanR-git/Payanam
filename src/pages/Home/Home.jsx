@@ -81,10 +81,10 @@ function Home() {
         />
 
         <ListItem
-          icon={<Settings2 size={20} />}
-          title="Configuration"
-          onClick={() => navigate("/configuration")}
-        />
+  icon={<Settings2 size={20} />}
+  title="Settings"
+  onClick={() => navigate("/settings")}
+/>
 
       </section>
     </motion.div>

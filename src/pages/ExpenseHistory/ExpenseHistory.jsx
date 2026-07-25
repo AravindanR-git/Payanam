@@ -8,7 +8,6 @@ import TripRepository from "../../database/repositories/TripRepository";
 import ExpenseRepository from "../../database/repositories/ExpenseRepository";
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
 import CategoryRepository from "../../database/repositories/CategoryRepository";
-import ItemRepository from "../../database/repositories/ItemRepository";
 
 import DetailsStep from "../../components/AddExpenseSheet/DetailsStep";
 import BottomSheet from "../../components/BottomSheet/BottomSheet";
@@ -26,8 +25,8 @@ function ExpenseHistory() {
   const [selectedCategory, setSelectedCategory] =
     useState(null);
 
-  const [selectedItem, setSelectedItem] =
-    useState(null);
+  const [selectedItems, setSelectedItems] =
+    useState([]);
 
   const [showEditSheet, setShowEditSheet] =
     useState(false);
@@ -89,16 +88,9 @@ function ExpenseHistory() {
 
     setSelectedCategory(category);
 
-    const items =
-      await ItemRepository.getItems(
-        expense.categoryId
-      );
-
-    const item = items.find(
-      (i) => i.id === expense.itemId
+    setSelectedItems(
+      expense.selectedItems || []
     );
-
-    setSelectedItem(item);
 
     setShowEditSheet(true);
   };
@@ -128,7 +120,16 @@ function ExpenseHistory() {
             }
           >
             <div>
-              <h3>{expense.itemName}</h3>
+              <h3>
+                {expense.selectedItems &&
+                expense.selectedItems.length > 0
+                  ? expense.selectedItems
+                      .map(
+                        (item) => item.name
+                      )
+                      .join(", ")
+                  : "Expense"}
+              </h3>
 
               <p>{expense.notes}</p>
 
@@ -136,7 +137,7 @@ function ExpenseHistory() {
                 {expense.paymentSource ===
                 "fund"
                   ? "💰 Trip Fund"
-                  : `👤 ${expense.paidByName}`}
+                  : `👤 ${expense.paidByName || "Participant"}`}
               </small>
 
               <br />
@@ -144,14 +145,14 @@ function ExpenseHistory() {
               <small>
                 {new Date(
                   expense.expenseTime
-                ).toLocaleString()}
+                ).toLocaleString("en-IN")}
               </small>
             </div>
 
             <h2>
               ₹
               {Number(
-                expense.amount
+                expense.amount || 0
               ).toLocaleString("en-IN")}
             </h2>
           </div>
@@ -167,12 +168,11 @@ function ExpenseHistory() {
       >
         {trip &&
           selectedExpense &&
-          selectedCategory &&
-          selectedItem && (
+          selectedCategory && (
             <DetailsStep
               trip={trip}
               category={selectedCategory}
-              item={selectedItem}
+              selectedItems={selectedItems}
               expense={selectedExpense}
               onBack={() =>
                 setShowEditSheet(false)

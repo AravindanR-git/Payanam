@@ -1,0 +1,41 @@
+.segment{
+
+    display:flex;
+
+    background:var(--color-surfaceSecondary);
+
+    padding:4px;
+
+    border-radius:999px;
+
+}
+
+.segment-item{
+
+    flex:1;
+
+    height:44px;
+
+    border:none;
+
+    border-radius:999px;
+
+    background:transparent;
+
+    color:var(--color-textSecondary);
+
+    font-weight:600;
+
+    transition:all var(--animation-normal);
+
+}
+
+.segment-item.active{
+
+    background:var(--color-primary);
+
+    color:white;
+
+    box-shadow:var(--shadow-sm);
+
+}

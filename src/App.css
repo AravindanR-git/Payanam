@@ -1,0 +1,29 @@
+.app-shell{
+
+    width:100%;
+
+    height:100dvh;
+
+    overflow:hidden;
+
+    display:flex;
+
+    flex-direction:column;
+
+    background:var(--color-background);
+
+}
+
+.app-content{
+
+    flex:1;
+
+    overflow-y:auto;
+
+    overflow-x:hidden;
+
+    -webkit-overflow-scrolling:touch;
+
+    overscroll-behavior:none;
+
+}

@@ -1,0 +1,90 @@
+.setting-card{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px;
+
+    border-radius:22px;
+
+    background:rgba(255,255,255,.82);
+
+    backdrop-filter:blur(20px);
+
+    cursor:pointer;
+
+    transition:.25s;
+
+    box-shadow:
+        0 10px 24px rgba(0,0,0,.06);
+
+}
+
+.setting-card:active{
+
+    transform:scale(.98);
+
+}
+
+.setting-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+.setting-icon{
+
+    width:52px;
+
+    height:52px;
+
+    border-radius:18px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:linear-gradient(
+        180deg,
+        #2F8CFF,
+        #0A84FF
+    );
+
+    color:white;
+
+}
+
+.setting-title{
+
+    font-size:16px;
+
+    font-weight:600;
+
+}
+
+.setting-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+.setting-value{
+
+    color:#8E8E93;
+
+    font-size:14px;
+
+}

@@ -1,6 +1,7 @@
 import "./BottomSheet.css";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 
 function BottomSheet({
   isOpen,
@@ -8,47 +9,67 @@ function BottomSheet({
   title,
   children,
 }) {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
 
       {isOpen && (
 
-        <>
+        <motion.div
+          className="sheet-root"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
 
           <motion.div
             className="sheet-overlay"
             onClick={onClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
           />
 
           <motion.div
             className="bottom-sheet"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            initial={{
+              y: "100%",
+            }}
+            animate={{
+              y: 0,
+            }}
+            exit={{
+              y: "100%",
+            }}
             transition={{
               type: "spring",
-              damping: 24,
-              stiffness: 250,
+              damping: 28,
+              stiffness: 260,
             }}
           >
 
+            <div className="sheet-grabber" />
+
             <div className="sheet-header">
 
-              <div className="sheet-handle" />
+              <h2>{title}</h2>
 
               <button
                 className="close-btn"
                 onClick={onClose}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
 
             </div>
-
-            <h2>{title}</h2>
 
             <div className="sheet-content">
 
@@ -58,7 +79,7 @@ function BottomSheet({
 
           </motion.div>
 
-        </>
+        </motion.div>
 
       )}
 

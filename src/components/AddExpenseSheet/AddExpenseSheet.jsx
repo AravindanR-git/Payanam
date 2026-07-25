@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 import BottomSheet from "../BottomSheet/BottomSheet";
@@ -9,7 +8,6 @@ import DetailsStep from "./DetailsStep";
 
 import CategoryRepository from "../../database/repositories/CategoryRepository";
 import ItemRepository from "../../database/repositories/ItemRepository";
-import db from "../../database/db";
 
 function AddExpenseSheet({
   isOpen,
@@ -25,8 +23,8 @@ function AddExpenseSheet({
   const [selectedCategory, setSelectedCategory] =
     useState(null);
 
-  const [selectedItem, setSelectedItem] =
-    useState(null);
+  const [selectedItems, setSelectedItems] =
+    useState([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,39 +35,48 @@ function AddExpenseSheet({
 
   const resetSheet = () => {
     setStep(1);
+
     setSelectedCategory(null);
-    setSelectedItem(null);
+
+    setSelectedItems([]);
+
     setItems([]);
   };
+
   const goToCategories = () => {
-  setSelectedCategory(null);
-  setSelectedItem(null);
-  setItems([]);
-  setStep(1);
-};
+    setSelectedCategory(null);
+
+    setSelectedItems([]);
+
+    setItems([]);
+
+    setStep(1);
+  };
 
   const loadCategories = async () => {
     if (!trip) return;
 
     const list =
-  await CategoryRepository.getCategories();
+      await CategoryRepository.getCategories();
 
     setCategories(list);
   };
 
   const handleCategory = async (category) => {
+    setSelectedCategory(category);
 
-  setSelectedCategory(category);
+    setSelectedItems([]);
 
-  const list = await ItemRepository.getItems(category.id);
+    const list =
+      await ItemRepository.getItems(category.id);
 
-  setItems(list);
+    setItems(list);
 
-  setStep(2);
+    setStep(2);
+  };
 
-};
-  const handleItem = (item) => {
-    setSelectedItem(item);
+  const handleItems = (items) => {
+    setSelectedItems(items);
 
     setStep(3);
   };
@@ -90,29 +97,28 @@ function AddExpenseSheet({
 
       {step === 2 && (
         <ItemStep
-  category={selectedCategory}
-  items={items}
-  onBack={goToCategories}
-  onSelect={handleItem}
-/>
+          category={selectedCategory}
+          items={items}
+          selectedItems={selectedItems}
+          onBack={goToCategories}
+          onContinue={handleItems}
+        />
       )}
 
       {step === 3 && (
         <DetailsStep
-  trip={trip}
-  category={selectedCategory}
-  item={selectedItem}
-  onBack={() => {
-    setSelectedItem(null);
-    setStep(2);
-  }}
-  onClose={onClose}
-  onSaved={onExpenseSaved}
-/>
+          trip={trip}
+          category={selectedCategory}
+          selectedItems={selectedItems}
+          onBack={() => {
+            setStep(2);
+          }}
+          onClose={onClose}
+          onSaved={onExpenseSaved}
+        />
       )}
     </BottomSheet>
   );
 }
 
 export default AddExpenseSheet;
-
