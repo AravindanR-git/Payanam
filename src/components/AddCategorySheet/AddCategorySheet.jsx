@@ -1,168 +1,144 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import BottomSheet from "../BottomSheet/BottomSheet";
 import Button from "../Button/Button";
 
 import CategoryRepository from "../../database/repositories/CategoryRepository";
+import { CATEGORY_ICONS } from "../../constants/iconRegistry";
+
+import "./AddCategorySheet.css";
 
 function AddCategorySheet({
-
   isOpen,
-
   onClose,
-
   category = null,
-
   onSaved,
-
 }) {
-
   const [name, setName] = useState("");
-
-  const [icon, setIcon] = useState("📂");
+  const [icon, setIcon] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-
     if (!isOpen) return;
 
     if (category) {
-
       setName(category.name || "");
-
-      setIcon(category.icon || "📂");
-
+      setIcon(category?.icon || "");
     } else {
-
       setName("");
-
-      setIcon("📂");
-
+      setIcon("");
     }
 
+    setSearch("");
   }, [category, isOpen]);
 
+  const filteredIcons = useMemo(() => {
+    if (!search.trim()) return CATEGORY_ICONS;
+
+    const text = search.toLowerCase();
+
+    return CATEGORY_ICONS.filter((icon) =>
+      icon.keywords.some((k) =>
+        k.toLowerCase().includes(text)
+      )
+    );
+  }, [search]);
+
   const saveCategory = async () => {
-
     if (!name.trim()) {
-
       alert("Enter category name");
-
       return;
-
     }
+
+    let savedCategory;
 
     if (category) {
-
-      await CategoryRepository.updateCategory(
-
-        category.id,
-
-        {
-
-          name,
-
-          icon,
-
-        }
-
-      );
-
-    } else {
-
-      await CategoryRepository.createCategory({
-
+      await CategoryRepository.updateCategory(category.id, {
         name,
-
         icon,
-
       });
 
+      savedCategory = {
+        ...category,
+        name,
+        icon,
+      };
+    } else {
+      savedCategory =
+        await CategoryRepository.createCategory({
+          name,
+          icon,
+        });
     }
 
-    if (onSaved) {
-
-      await onSaved();
-
-    }
-
-    onClose();
-
+    await onSaved?.(savedCategory);
   };
 
   return (
-
     <BottomSheet
-
       isOpen={isOpen}
-
       onClose={onClose}
-
-      title={
-
-        category
-
-          ? "Edit Category"
-
-          : "Add Category"
-
-      }
-
+      title={category ? "Edit Category" : "Add Category"}
     >
+      <div className="category-sheet">
 
-      <input
+        <input
+          className="sheet-input"
+          placeholder="Category Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
-        className="sheet-input"
+        <input
+          className="sheet-input"
+          placeholder="🔍 Search icons..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-        placeholder="Category Name"
+        <div className="icon-picker">
 
-        value={name}
+          {filteredIcons.length === 0 ? (
+            <div className="no-icons">
+              No icons found
+            </div>
+          ) : (
+            <div className="icon-grid">
 
-        onChange={(e)=>
+              {filteredIcons.map((item) => (
 
-          setName(e.target.value)
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`icon-card ${icon === item.path ? "selected" : ""
+                    }`}
+                  onClick={() => setIcon(item.path)}
+                >
 
-        }
+                  <img
+                    src={item.path}
+                    alt=""
+                    draggable={false}
+                  />
 
-      />
+                </button>
 
-      <input
+              ))}
 
-        className="sheet-input"
+            </div>
+          )}
 
-        placeholder="Emoji (📂 🍔 ⛽ 🏨)"
+        </div>
 
-        value={icon}
-
-        onChange={(e)=>
-
-          setIcon(e.target.value)
-
-        }
-
-      />
-
-      <Button
-
-        onClick={saveCategory}
-
-      >
-
-        {
-
-          category
-
+        <Button onClick={saveCategory}>
+          {category
             ? "Update Category"
+            : "Save Category"}
+        </Button>
 
-            : "Save Category"
-
-        }
-
-      </Button>
-
+      </div>
     </BottomSheet>
-
   );
-
 }
 
 export default AddCategorySheet;

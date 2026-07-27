@@ -8,6 +8,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import IconAvatar from "../../components/IconAvatar/IconAvatar";
 
 import CategoryRepository from "../../database/repositories/CategoryRepository";
 import AddCategorySheet from "../../components/AddCategorySheet/AddCategorySheet";
@@ -81,7 +82,7 @@ function Categories() {
         className="back-btn"
         onClick={() => navigate(-1)}
       >
-        <ArrowLeft size={20}/>
+        <ArrowLeft size={20} />
       </button>
 
       <div className="categories-header">
@@ -100,104 +101,103 @@ function Categories() {
 
         categories.length === 0 ?
 
-        <div className="empty-card">
+          <div className="empty-card">
 
-          <h3>
+            <h3>
 
-            No Categories
+              No Categories
 
-          </h3>
+            </h3>
 
-          <p>
+            <p>
 
-            Create your first expense category.
+              Create your first expense category.
 
-          </p>
+            </p>
 
-        </div>
+          </div>
 
-        :
+          :
 
-        <div className="categories-list">
+          <div className="categories-list">
 
-          {
+            {
 
-            categories.map(category => (
-
-              <div
-  key={category.id}
-  className="category-card"
-  onClick={() =>
-    navigate("/items", {
-      state: {
-        category,
-      },
-    })
-  }
->
-
-                <div className="category-left">
-
-                  <div className="category-icon">
-
-                    {category.icon || "📂"}
-
-                  </div>
-
-                  <div className="category-text">
-
-                    <span className="category-title">
-
-                      {category.name}
-
-                    </span>
-
-                  </div>
-
-                </div>
+              categories.map(category => (
 
                 <div
-                  style={{
-                    display:"flex",
-                    gap:"10px",
-                  }}
+                  key={category.id}
+                  className="category-card"
+                  onClick={() =>
+                    navigate("/items", {
+                      state: {
+                        category,
+                      },
+                    })
+                  }
                 >
 
-                  <button
-  className="category-action"
-  onClick={(e) => {
+                  <div className="category-left">
 
-    e.stopPropagation();
+                    <IconAvatar
+                      icon={category.icon}
+                      name={category.name}
+                      size={42}
+                    />
+                    <div className="category-text">
 
-    editCategory(category);
+                      <span className="category-title">
 
-  }}
->
-  <Pencil size={18}/>
-</button>
+                        {category.name}
 
-                  <button
-  className="category-action"
-  onClick={(e) => {
+                      </span>
 
-    e.stopPropagation();
+                    </div>
 
-    deleteCategory(category);
+                  </div>
 
-  }}
->
-  <Trash2 size={18}/>
-</button>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                    }}
+                  >
+
+                    <button
+                      className="category-action"
+                      onClick={(e) => {
+
+                        e.stopPropagation();
+
+                        editCategory(category);
+
+                      }}
+                    >
+                      <Pencil size={18} />
+                    </button>
+
+                    <button
+                      className="category-action"
+                      onClick={(e) => {
+
+                        e.stopPropagation();
+
+                        deleteCategory(category);
+
+                      }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+
+                  </div>
 
                 </div>
 
-              </div>
+              ))
 
-            ))
+            }
 
-          }
-
-        </div>
+          </div>
 
       }
 
@@ -209,7 +209,7 @@ function Categories() {
 
       >
 
-        <Plus size={26}/>
+        <Plus size={26} />
 
       </button>
 

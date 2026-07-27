@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./ItemStep.css";
+
+import IconAvatar from "../../components/IconAvatar/IconAvatar";
 
 function ItemStep({
   category,
@@ -7,9 +9,31 @@ function ItemStep({
   selectedItems = [],
   onBack,
   onContinue,
+  onAddItem,
 }) {
   const [selected, setSelected] =
     useState(selectedItems);
+
+  const [search, setSearch] =
+    useState("");
+
+  useEffect(() => {
+    setSelected(selectedItems);
+  }, [selectedItems]);
+
+  const filteredItems = useMemo(() => {
+    const keyword = search
+      .trim()
+      .toLowerCase();
+
+    if (!keyword) return items;
+
+    return items.filter((item) =>
+      item.name
+        ?.toLowerCase()
+        .includes(keyword)
+    );
+  }, [items, search]);
 
   const toggleItem = (item) => {
     const exists = selected.some(
@@ -28,13 +52,15 @@ function ItemStep({
         {
           id: item.id,
           name: item.name,
+          icon: item.icon,
         },
       ]);
     }
   };
 
   return (
-    <div>
+    <div className="item-step">
+
       <button
         type="button"
         className="back-step-btn"
@@ -47,54 +73,136 @@ function ItemStep({
         ← Back
       </button>
 
-      <h3>{category?.name}</h3>
+      <div className="item-header">
 
-      <div className="selected-count">
-        Selected: {selected.length}
+        <IconAvatar
+          icon={category?.icon}
+          name={category?.name}
+          size={48}
+        />
+
+        <div>
+
+          <h2 className="step-title">
+            {category?.name}
+          </h2>
+
+          <p className="step-subtitle">
+            Select one or more items
+          </p>
+
+        </div>
+
       </div>
 
-      <div className="item-grid">
-        {items.length === 0 ? (
-          <p>No items found.</p>
-        ) : (
-          items.map((item) => {
+      <input
+        className="item-search"
+        type="text"
+        placeholder="Search item..."
+        value={search}
+        onChange={(e) =>
+          setSearch(e.target.value)
+        }
+      />
+
+      <div className="selected-count">
+        {selected.length} Selected
+      </div>
+
+      {filteredItems.length === 0 ? (
+
+        <div className="empty-state">
+          No items found.
+        </div>
+
+      ) : (
+
+        <div className="item-list">
+
+          {filteredItems.map((item) => {
+
             const isSelected =
               selected.some(
                 (i) => i.id === item.id
               );
 
             return (
-              <div
+
+              <button
                 key={item.id}
-                className={`item-tile ${
+                type="button"
+                className={`item-card ${
                   isSelected
                     ? "selected"
                     : ""
                 }`}
-                style={{
-                  backgroundImage: `url(/assets/items/${
-                    item.image ||
-                    "placeholder.jpg"
-                  })`,
-                }}
                 onClick={() =>
                   toggleItem(item)
                 }
               >
-                <div className="item-overlay">
-                  <h2>{item.name}</h2>
 
-                  {isSelected && (
-                    <div className="selected-badge">
-                      ✓
-                    </div>
-                  )}
+                <div className="item-left">
+
+                  <IconAvatar
+                    icon={item.icon}
+                    name={item.name}
+                    size={46}
+                  />
+
+                  <span className="item-name">
+                    {item.name}
+                  </span>
+
                 </div>
-              </div>
+
+                {isSelected && (
+                  <div className="checkmark">
+                    ✓
+                  </div>
+                )}
+
+              </button>
+
             );
-          })
-        )}
-      </div>
+
+          })}
+
+          <button
+            type="button"
+            className="item-card"
+            onClick={onAddItem}
+          >
+
+            <div className="item-left">
+
+              <div
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: "50%",
+                  background: "#2563eb",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 28,
+                  fontWeight: 700,
+                }}
+              >
+                +
+              </div>
+
+              <span className="item-name">
+                Create New Item
+              </span>
+
+            </div>
+
+          </button>
+
+        </div>
+
+      )}
 
       <button
         className="continue-btn"
@@ -107,6 +215,7 @@ function ItemStep({
       >
         Continue
       </button>
+
     </div>
   );
 }

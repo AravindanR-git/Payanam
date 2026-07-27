@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import Button from "../Button/Button";
+import { MapPinned } from "lucide-react";
+import "./DetailsStep.css";
 
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
 import ExpenseRepository from "../../database/repositories/ExpenseRepository";
+import LocationService from "../../services/LocationService";
+import BottomSheet from "../BottomSheet/BottomSheet";
+import ManualLocationSheet from "./ManualLocationSheet";
 
 function DetailsStep({
   trip,
@@ -20,6 +25,8 @@ function DetailsStep({
   const [notes, setNotes] = useState(
     expense?.notes || ""
   );
+  const [showManualLocation, setShowManualLocation] =
+    useState(false);
 
   const [participants, setParticipants] =
     useState([]);
@@ -35,9 +42,21 @@ function DetailsStep({
   ] = useState(
     expense?.paidByParticipantId || ""
   );
+  const [location, setLocation] = useState({
+    latitude: expense?.latitude ?? null,
+    longitude: expense?.longitude ?? null,
+    locationName: expense?.locationName ?? "",
+  });
+
+  const [loadingLocation, setLoadingLocation] =
+    useState(false);
 
   useEffect(() => {
     loadParticipants();
+
+    if (!expense) {
+      loadLocation();
+    }
   }, []);
 
   const loadParticipants = async () => {
@@ -52,6 +71,43 @@ function DetailsStep({
       setPaidByParticipantId(list[0].id);
     }
   };
+  const loadLocation = async (forceRefresh = false) => {
+    setLoadingLocation(true);
+
+    try {
+      const currentLocation =
+        await LocationService.getCurrentLocation(forceRefresh);
+
+      // No location
+      if (!currentLocation.latitude) {
+        setLocation({
+          latitude: null,
+          longitude: null,
+          locationName: "",
+          accuracy: null,
+          source: "unknown",
+        });
+        return;
+      }
+
+
+
+
+      setLocation(currentLocation);
+    } catch (err) {
+      console.error(err);
+
+      setLocation({
+        latitude: null,
+        longitude: null,
+        locationName: "",
+        accuracy: null,
+        source: "unknown",
+      });
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
 
   const saveExpense = async () => {
     if (!amount || Number(amount) <= 0) {
@@ -60,6 +116,9 @@ function DetailsStep({
     }
 
     const expenseData = {
+      latitude: location.latitude,
+      longitude: location.longitude,
+      locationName: location.locationName,
       amount: Number(amount),
 
       notes,
@@ -122,7 +181,7 @@ function DetailsStep({
   };
 
   return (
-    <div>
+    <div className="details-step">
       <button
         type="button"
         className="back-step-btn"
@@ -131,134 +190,215 @@ function DetailsStep({
         ← Back
       </button>
 
-      <h3>{category?.name}</h3>
+      <h3 className="details-title">
+        {category?.name}
+      </h3>
 
       {selectedItems.length > 0 && (
-        <div
-          style={{
-            marginBottom: "16px",
-          }}
-        >
-          <strong>
+        <div className="details-card">
+          <h4 className="section-title">
             Selected Items
-          </strong>
+          </h4>
 
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              marginTop: "8px",
-            }}
-          >
+          <div className="items-container">
             {selectedItems.map((item) => (
-              <span
+              <div
                 key={item.id}
-                style={{
-                  padding:
-                    "6px 12px",
-                  borderRadius:
-                    "20px",
-                  background:
-                    "#eef4ff",
-                  color: "#2563eb",
-                  fontWeight: 600,
-                  fontSize: "14px",
-                }}
+                className="item-chip"
               >
                 {item.name}
-              </span>
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      <input
-        className="sheet-input"
-        type="number"
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) =>
-          setAmount(e.target.value)
-        }
-      />
+      <div className="details-card amount-card">
+        <h4 className="section-title">
+          Expense Amount
+        </h4>
 
-      <textarea
-        className="sheet-input"
-        placeholder="Description (Optional)"
-        value={notes}
-        onChange={(e) =>
-          setNotes(e.target.value)
-        }
-      />
-
-      <div className="payment-card">
-        <h4>Money Source</h4>
-
-        <div
-          className="payment-source"
-          onClick={() =>
-            setPaymentSource(
-              paymentSource ===
-                "fund"
-                ? "participant"
-                : "fund"
-            )
+        <input
+          className="amount-input"
+          type="number"
+          placeholder="Amount"
+          value={amount}
+          onChange={(e) =>
+            setAmount(e.target.value)
           }
-        >
-          {paymentSource ===
-          "fund"
-            ? "💰 Trip Fund"
-            : "👤 Personal Wallet"}
+        />
+      </div>
+
+      <div className="details-card">
+        <h4 className="section-title">
+          Notes
+        </h4>
+
+        <textarea
+          className="notes-input"
+
+          placeholder="Description (Optional)"
+          value={notes}
+          onChange={(e) =>
+            setNotes(e.target.value)
+          }
+        />
+      </div>
+
+      <div className="details-card">
+        <h4 className="section-title">
+          Money Source
+        </h4>
+
+        <div className="payment-toggle">
+          <button
+            type="button"
+            className={`payment-btn ${paymentSource === "fund"
+              ? "active"
+              : ""
+              }`}
+            onClick={() =>
+              setPaymentSource("fund")
+            }
+          >
+            💰 Trip Fund
+          </button>
+
+          <button
+            type="button"
+            className={`payment-btn ${paymentSource ===
+              "participant"
+              ? "active"
+              : ""
+              }`}
+            onClick={() =>
+              setPaymentSource(
+                "participant"
+              )
+            }
+          >
+            👤 Personal
+          </button>
         </div>
 
         {paymentSource ===
           "participant" && (
-          <select
-            className="sheet-input"
-            value={
-              paidByParticipantId
-            }
-            onChange={(e) =>
-              setPaidByParticipantId(
-                e.target.value
-              )
-            }
-          >
-            {participants.map(
-              (participant) => (
-                <option
-                  key={
-                    participant.id
-                  }
-                  value={
-                    participant.id
+            <select
+              className="sheet-input"
+              value={
+                paidByParticipantId
+              }
+              onChange={(e) =>
+                setPaidByParticipantId(
+                  e.target.value
+                )
+              }
+            >
+              {participants.map(
+                (participant) => (
+                  <option
+                    key={
+                      participant.id
+                    }
+                    value={
+                      participant.id
+                    }
+                  >
+                    {participant.name}
+                  </option>
+                )
+              )}
+            </select>
+          )}
+      </div>
+      <div className="details-card">
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div className="location-header">
+            <MapPinned
+              size={20}
+              color="#2563eb"
+            />
+            <span>Location</span>
+          </div>
+          {!expense &&
+            !loadingLocation &&
+            !location.latitude && (
+              <div className="location-actions">
+                <button
+                  type="button"
+                  onClick={() => loadLocation(true)}
+                  className="link-btn"
+                >
+                  Retry
+                </button>
+
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() =>
+                    setShowManualLocation(true)
                   }
                 >
-                  {participant.name}
-                </option>
-              )
+                  Enter manually
+                </button>
+              </div>
             )}
-          </select>
-        )}
+        </div>
+
+        <div className="location-text">
+          {loadingLocation
+            ? "📍 Detecting location..."
+            : location.locationName || "📍 Location unavailable"}
+        </div>
+
+
       </div>
 
-      <Button onClick={saveExpense}>
-        {expense
-          ? "Update Expense"
-          : "Save Expense"}
-      </Button>
+            <div className="save-bar">
+        <button
+          className="save-btn"
+          onClick={saveExpense}
+        >
+          {expense
+            ? "Update Expense"
+            : "Save Expense"}
+        </button>
+      </div>
 
       {expense && (
-        <Button
-          variant="danger"
-          onClick={
-            deleteExpense
-          }
-        >
-          Delete Expense
-        </Button>
+        <div className="delete-btn">
+          <Button
+            variant="danger"
+            onClick={deleteExpense}
+          >
+            Delete Expense
+          </Button>
+        </div>
       )}
+
+      <BottomSheet
+        isOpen={showManualLocation}
+        onClose={() =>
+          setShowManualLocation(false)
+        }
+      >
+        <ManualLocationSheet
+          onCancel={() =>
+            setShowManualLocation(false)
+          }
+          onSave={(manualLocation) => {
+            setLocation(manualLocation);
+            setShowManualLocation(false);
+          }}
+        />
+      </BottomSheet>
     </div>
   );
 }

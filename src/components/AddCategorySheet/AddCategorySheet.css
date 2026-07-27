@@ -1,0 +1,79 @@
+.category-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.icon-picker {
+  height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.icon-picker::-webkit-scrollbar {
+  width: 6px;
+}
+
+.icon-picker::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 999px;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 12px;
+}
+
+.icon-card {
+  width: 64px;
+  height: 64px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid #e5e7eb;
+  border-radius: 18px;
+
+  background: white;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+
+  padding: 0;
+}
+
+.icon-card img {
+  width: 34px;
+  height: 34px;
+
+  object-fit: contain;
+
+  user-select: none;
+  pointer-events: none;
+}
+
+.icon-card:hover {
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+}
+
+.icon-card.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.no-icons {
+  height: 180px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 500;
+}

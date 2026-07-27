@@ -6,6 +6,9 @@ import CategoryStep from "./CategoryStep";
 import ItemStep from "./ItemStep";
 import DetailsStep from "./DetailsStep";
 
+import AddCategorySheet from "../AddCategorySheet/AddCategorySheet";
+import AddItemSheet from "../AddItemSheet/AddItemSheet";
+
 import CategoryRepository from "../../database/repositories/CategoryRepository";
 import ItemRepository from "../../database/repositories/ItemRepository";
 
@@ -26,6 +29,12 @@ function AddExpenseSheet({
   const [selectedItems, setSelectedItems] =
     useState([]);
 
+  const [showCategorySheet, setShowCategorySheet] =
+    useState(false);
+
+  const [showItemSheet, setShowItemSheet] =
+    useState(false);
+
   useEffect(() => {
     if (isOpen) {
       resetSheet();
@@ -41,6 +50,10 @@ function AddExpenseSheet({
     setSelectedItems([]);
 
     setItems([]);
+
+    setShowCategorySheet(false);
+
+    setShowItemSheet(false);
   };
 
   const goToCategories = () => {
@@ -62,15 +75,19 @@ function AddExpenseSheet({
     setCategories(list);
   };
 
+  const loadItems = async (categoryId) => {
+    const list =
+      await ItemRepository.getItems(categoryId);
+
+    setItems(list);
+  };
+
   const handleCategory = async (category) => {
     setSelectedCategory(category);
 
     setSelectedItems([]);
 
-    const list =
-      await ItemRepository.getItems(category.id);
-
-    setItems(list);
+    await loadItems(category.id);
 
     setStep(2);
   };
@@ -81,43 +98,100 @@ function AddExpenseSheet({
     setStep(3);
   };
 
+  const handleCategoryCreated = async (
+    category
+  ) => {
+    await loadCategories();
+
+    setSelectedCategory(category);
+
+    setSelectedItems([]);
+
+    await loadItems(category.id);
+
+    setShowCategorySheet(false);
+
+    setShowItemSheet(true);
+  };
+
+  const handleItemCreated = async (item) => {
+    await loadItems(item.categoryId);
+
+    setSelectedItems([
+      {
+        id: item.id,
+        name: item.name,
+        icon: item.icon,
+      },
+    ]);
+
+    setShowItemSheet(false);
+
+    setStep(3);
+  };
+
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Add Expense"
-    >
-      {step === 1 && (
-        <CategoryStep
-          categories={categories}
-          onSelect={handleCategory}
-          onBack={onClose}
-        />
-      )}
+    <>
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Add Expense"
+      >
+        {step === 1 && (
+          <CategoryStep
+            categories={categories}
+            onSelect={handleCategory}
+            onBack={onClose}
+            onAddCategory={() =>
+              setShowCategorySheet(true)
+            }
+          />
+        )}
 
-      {step === 2 && (
-        <ItemStep
-          category={selectedCategory}
-          items={items}
-          selectedItems={selectedItems}
-          onBack={goToCategories}
-          onContinue={handleItems}
-        />
-      )}
+        {step === 2 && (
+          <ItemStep
+            category={selectedCategory}
+            items={items}
+            selectedItems={selectedItems}
+            onBack={goToCategories}
+            onContinue={handleItems}
+            onAddItem={() =>
+              setShowItemSheet(true)
+            }
+          />
+        )}
 
-      {step === 3 && (
-        <DetailsStep
-          trip={trip}
-          category={selectedCategory}
-          selectedItems={selectedItems}
-          onBack={() => {
-            setStep(2);
-          }}
-          onClose={onClose}
-          onSaved={onExpenseSaved}
-        />
-      )}
-    </BottomSheet>
+        {step === 3 && (
+          <DetailsStep
+            trip={trip}
+            category={selectedCategory}
+            selectedItems={selectedItems}
+            onBack={() => setStep(2)}
+            onClose={onClose}
+            onSaved={onExpenseSaved}
+          />
+        )}
+      </BottomSheet>
+
+      <AddCategorySheet
+        isOpen={showCategorySheet}
+        onClose={() =>
+          setShowCategorySheet(false)
+        }
+        category={null}
+        onSaved={handleCategoryCreated}
+      />
+
+      <AddItemSheet
+        isOpen={showItemSheet}
+        onClose={() =>
+          setShowItemSheet(false)
+        }
+        category={selectedCategory}
+        item={null}
+        onSaved={handleItemCreated}
+      />
+    </>
   );
 }
 

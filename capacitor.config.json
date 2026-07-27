@@ -1,0 +1,5 @@
+{
+  "appId": "com.tripledger.app",
+  "appName": "TripLedger",
+  "webDir": "dist"
+}

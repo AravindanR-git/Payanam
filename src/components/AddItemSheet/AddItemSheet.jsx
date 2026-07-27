@@ -1,172 +1,148 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import BottomSheet from "../BottomSheet/BottomSheet";
 import Button from "../Button/Button";
 
 import ItemRepository from "../../database/repositories/ItemRepository";
+import { ITEM_ICONS } from "../../constants/iconRegistry";
+
+import "./AddItemSheet.css";
 
 function AddItemSheet({
-
   isOpen,
-
   onClose,
-
   category,
-
   item = null,
-
   onSaved,
-
 }) {
-
   const [name, setName] = useState("");
-
-  const [icon, setIcon] = useState("📦");
+  const [icon, setIcon] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-
     if (!isOpen) return;
 
     if (item) {
-
       setName(item.name || "");
-
-      setIcon(item.icon || "📦");
-
+      setIcon(item.icon || "");
     } else {
-
       setName("");
-
-      setIcon("📦");
-
+      setIcon("");
     }
 
+    setSearch("");
   }, [item, isOpen]);
 
+  const filteredIcons = useMemo(() => {
+    if (!search.trim()) return ITEM_ICONS;
+
+    const keyword = search.toLowerCase();
+
+    return ITEM_ICONS.filter((icon) =>
+      icon.keywords.some((k) =>
+        k.toLowerCase().includes(keyword)
+      )
+    );
+  }, [search]);
+
   const saveItem = async () => {
-
     if (!name.trim()) {
-
       alert("Enter item name");
-
       return;
-
     }
+
+    let savedItem;
 
     if (item) {
-
-      await ItemRepository.updateItem(
-
-        item.id,
-
-        {
-
-          name,
-
-          icon,
-
-        }
-
-      );
-
-    } else {
-
-      await ItemRepository.createItem({
-
-        categoryId: category.id,
-
+      await ItemRepository.updateItem(item.id, {
         name,
-
         icon,
-
       });
 
+      savedItem = {
+        ...item,
+        name,
+        icon,
+      };
+    } else {
+      savedItem =
+        await ItemRepository.createItem({
+          categoryId: category.id,
+          name,
+          icon,
+        });
     }
 
-    if (onSaved) {
-
-      await onSaved();
-
-    }
-
-    onClose();
-
+    await onSaved?.(savedItem);
   };
 
   return (
-
     <BottomSheet
-
       isOpen={isOpen}
-
       onClose={onClose}
-
-      title={
-
-        item
-
-          ? "Edit Item"
-
-          : "Add Item"
-
-      }
-
+      title={item ? "Edit Item" : "Add Item"}
     >
+      <div className="category-sheet">
 
-      <input
+        <input
+          className="sheet-input"
+          placeholder="Item Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
-        className="sheet-input"
+        <input
+          className="sheet-input"
+          placeholder="🔍 Search icons..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-        placeholder="Item Name"
+        <div className="icon-picker">
 
-        value={name}
+          {filteredIcons.length === 0 ? (
+            <div className="no-icons">
+              No icons found
+            </div>
+          ) : (
+            <div className="icon-grid">
 
-        onChange={(e)=>
+              {filteredIcons.map((itemIcon) => (
 
-          setName(e.target.value)
+                <button
+                  key={itemIcon.id}
+                  type="button"
+                  className={`icon-card ${icon === itemIcon.path
+                      ? "selected"
+                      : ""
+                    }`}
+                  onClick={() =>
+                    setIcon(itemIcon.path)
+                  }
+                >
+                  <img
+                    src={itemIcon.path}
+                    alt=""
+                    draggable={false}
+                  />
+                </button>
 
-        }
+              ))}
 
-      />
+            </div>
+          )}
 
-      <input
+        </div>
 
-        className="sheet-input"
-
-        placeholder="Emoji (🍔 ⛽ 🏨)"
-
-        value={icon}
-
-        onChange={(e)=>
-
-          setIcon(e.target.value)
-
-        }
-
-      />
-
-      <Button
-
-        onClick={saveItem}
-
-      >
-
-        {
-
-          item
-
+        <Button onClick={saveItem}>
+          {item
             ? "Update Item"
+            : "Save Item"}
+        </Button>
 
-            : "Save Item"
-
-        }
-
-      </Button>
-
+      </div>
     </BottomSheet>
-
   );
-
 }
 
 export default AddItemSheet;

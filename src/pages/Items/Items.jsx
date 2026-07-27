@@ -9,6 +9,8 @@ import {
   Trash2,
 } from "lucide-react";
 
+import IconAvatar from "../../components/IconAvatar/IconAvatar";
+
 import ItemRepository from "../../database/repositories/ItemRepository";
 import AddItemSheet from "../../components/AddItemSheet/AddItemSheet";
 
@@ -98,11 +100,27 @@ function Items() {
 
       <div className="items-header">
 
-        <h1>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
 
-          {category.icon || "📂"} {category.name}
+          <IconAvatar
+            icon={category.icon}
+            name={category.name}
+            size={44}
+          />
 
-        </h1>
+          <h1>
+
+            {category.name}
+
+          </h1>
+
+        </div>
 
         <p>
 
@@ -143,11 +161,11 @@ function Items() {
 
                 <div className="item-left">
 
-                  <div className="item-icon">
-
-                    {item.icon || "📦"}
-
-                  </div>
+                  <IconAvatar
+                    icon={item.icon}
+                    name={item.name}
+                    size={40}
+                  />
 
                   <div className="item-text">
 

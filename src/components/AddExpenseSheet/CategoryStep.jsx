@@ -1,12 +1,32 @@
 import "./CategoryStep.css";
 
+import { useMemo, useState } from "react";
+
+import IconAvatar from "../../components/IconAvatar/IconAvatar";
+
 function CategoryStep({
   categories,
   onSelect,
   onBack,
+  onAddCategory,
 }) {
+  const [search, setSearch] = useState("");
+
+  const filteredCategories = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    if (!keyword) return categories;
+
+    return categories.filter((category) =>
+      category.name
+        ?.toLowerCase()
+        .includes(keyword)
+    );
+  }, [categories, search]);
+
   return (
-    <div>
+    <div className="category-step">
+
       <button
         type="button"
         className="back-step-btn"
@@ -19,30 +39,112 @@ function CategoryStep({
         ← Back
       </button>
 
-      <h3>Select Category</h3>
+      <h2 className="step-title">
+        Select Category
+      </h2>
 
-      {categories.length === 0 ? (
-        <p>No categories found.</p>
+      <p className="step-subtitle">
+        Choose where this expense belongs
+      </p>
+
+      <input
+        className="category-search"
+        type="text"
+        placeholder="Search category..."
+        value={search}
+        onChange={(e) =>
+          setSearch(e.target.value)
+        }
+      />
+
+      {filteredCategories.length === 0 ? (
+        <div className="empty-state">
+          No categories found.
+        </div>
       ) : (
-        <div className="category-grid">
-          {categories.map((category) => (
-            <div
+        <div className="category-list">
+
+          {filteredCategories.map((category) => (
+
+            <button
               key={category.id}
-              className="category-tile"
-              style={{
-                backgroundImage: `url(/assets/categories/${
-                  category.image || "placeholder.jpg"
-                })`,
-              }}
-              onClick={() => onSelect(category)}
+              type="button"
+              className="category-card"
+              onClick={() =>
+                onSelect(category)
+              }
             >
-              <div className="category-overlay">
-                <h2>{category.name}</h2>
+
+              <div className="category-left">
+
+                <IconAvatar
+                  icon={category.icon}
+                  name={category.name}
+                  size={50}
+                />
+
+                <div className="category-info">
+
+                  <span className="category-name">
+                    {category.name}
+                  </span>
+
+                </div>
+
               </div>
-            </div>
+
+              <span className="category-arrow">
+                →
+              </span>
+
+            </button>
+
           ))}
+
+          <button
+            type="button"
+            className="category-card"
+            onClick={onAddCategory}
+          >
+
+            <div className="category-left">
+
+              <div
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: "50%",
+                  background: "#2563eb",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 28,
+                  fontWeight: 700,
+                }}
+              >
+                +
+              </div>
+
+              <div className="category-info">
+
+                <span className="category-name">
+                  Create New Category
+                </span>
+
+              </div>
+
+            </div>
+
+            <span className="category-arrow">
+              →
+            </span>
+
+          </button>
+
         </div>
       )}
+
     </div>
   );
 }

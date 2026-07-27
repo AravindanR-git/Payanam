@@ -1,0 +1,38 @@
+.icon-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  background: #f5f5f5;
+
+  border: 1px solid #ececec;
+
+  transition: 0.25s;
+}
+
+.icon-avatar img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+
+  user-select: none;
+  pointer-events: none;
+}
+
+.letter-avatar {
+  color: white;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  user-select: none;
+
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
