@@ -1,0 +1,147 @@
+.overview-page{
+padding:12px;
+display:flex;
+flex-direction:column;
+gap:18px;
+}
+
+.summary-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:12px;
+}
+
+.summary-card{
+padding:18px;
+border-radius:18px;
+background:#fff;
+box-shadow:0 5px 15px rgba(0,0,0,.05);
+text-align:center;
+}
+
+.summary-card span{
+font-size:13px;
+color:#777;
+}
+
+.summary-card h2{
+margin-top:10px;
+font-size:20px;
+}
+
+.collected{
+border-top:4px solid #16a34a;
+}
+
+.spent{
+border-top:4px solid #ef4444;
+}
+
+.balance{
+border-top:4px solid #2563eb;
+}
+
+.budget-card{
+background:#fff;
+padding:18px;
+border-radius:18px;
+box-shadow:0 5px 15px rgba(0,0,0,.05);
+}
+
+.budget-header{
+display:flex;
+justify-content:space-between;
+margin-bottom:12px;
+}
+
+.progress{
+height:12px;
+background:#ececec;
+border-radius:10px;
+overflow:hidden;
+}
+
+.progress-fill{
+height:100%;
+background:#2563eb;
+border-radius:10px;
+transition:.4s;
+}
+
+.recent-card{
+background:#fff;
+padding:18px;
+border-radius:18px;
+box-shadow:0 5px 15px rgba(0,0,0,.05);
+}
+
+.recent-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:14px 0;
+border-bottom:1px solid #eee;
+}
+
+.recent-row:last-child{
+border-bottom:none;
+}
+.members{
+border-top:4px solid #9333ea;
+}
+
+.summary-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:12px;
+}
+
+.budget-footer{
+display:flex;
+justify-content:space-between;
+margin-top:12px;
+font-size:14px;
+color:#666;
+}
+
+.health-card{
+padding:18px;
+border-radius:18px;
+background:#fff;
+box-shadow:0 5px 15px rgba(0,0,0,.05);
+text-align:center;
+}
+
+.health-card span{
+font-size:13px;
+color:#777;
+}
+
+.health-card h3{
+margin-top:8px;
+font-size:20px;
+}
+
+.health-card.healthy{
+border-left:5px solid #16a34a;
+}
+
+.health-card.warning{
+border-left:5px solid #f59e0b;
+}
+
+.health-card.danger{
+border-left:5px solid #ef4444;
+}
+
+.recent-right{
+display:flex;
+flex-direction:column;
+align-items:flex-end;
+gap:4px;
+}
+
+.recent-row small{
+color:#777;
+font-size:12px;
+}

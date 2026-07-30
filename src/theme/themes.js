@@ -4,21 +4,21 @@ export const lightTheme = {
   name: "light",
 
   colors: {
-    primary: "#2563EB",
-    primaryHover: "#1D4ED8",
+    primary: "#007AFF",
+    primaryHover: "#0066D6",
 
     success: "#16A34A",
     warning: "#F59E0B",
     danger: "#DC2626",
 
-    background: "#F5F7FB",
+    background: "#F2F2F7",
     surface: "#FFFFFF",
-    surfaceSecondary: "#F8FAFC",
+    surfaceSecondary: "#F2F2F7",
 
-    text: "#111827",
-    textSecondary: "#6B7280",
+    text: "#1C1C1E",
+    textSecondary: "#6C6C70",
 
-    border: "#E5E7EB",
+    border: "#E5E5EA",
 
     inputBackground: "#FFFFFF",
 
@@ -34,21 +34,21 @@ export const darkTheme = {
   name: "dark",
 
   colors: {
-    primary: "#3B82F6",
-    primaryHover: "#60A5FA",
+    primary: "#0A84FF",
+    primaryHover: "#409CFF",
 
     success: "#22C55E",
     warning: "#FBBF24",
     danger: "#EF4444",
 
-    background: "#0F172A",
-    surface: "#1E293B",
-    surfaceSecondary: "#293548",
+    background: "#000000",
+    surface: "#1C1C1E",
+    surfaceSecondary: "#2C2C2E",
 
-    text: "#F8FAFC",
-    textSecondary: "#CBD5E1",
+    text: "#F5F5F7",
+    textSecondary: "#AEAEB2",
 
-    border: "#334155",
+    border: "#38383A",
 
     inputBackground: "#1E293B",
 

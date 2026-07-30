@@ -32,7 +32,10 @@ body{
     color:var(--color-text);
 
     font-family:
+        -apple-system,
+        BlinkMacSystemFont,
         "SF Pro Display",
+        "SF Pro Text",
         "Inter",
         sans-serif;
 
@@ -79,6 +82,8 @@ button{
     cursor:pointer;
 
     -webkit-tap-highlight-color:transparent;
+
+    touch-action:manipulation;
 
 }
 

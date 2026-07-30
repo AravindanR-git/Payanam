@@ -1,0 +1,151 @@
+.location-page{
+padding:18px;
+}
+
+.summary-card{
+background:#fff;
+padding:20px;
+border-radius:18px;
+box-shadow:0 5px 15px rgba(0,0,0,.06);
+margin-bottom:20px;
+text-align:center;
+}
+
+.summary-card h3{
+font-size:36px;
+margin:0;
+}
+
+.summary-card h4{
+margin-top:15px;
+margin-bottom:5px;
+}
+
+.location-list{
+display:flex;
+flex-direction:column;
+gap:14px;
+}
+
+.location-card{
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:#fff;
+padding:16px;
+border-radius:16px;
+box-shadow:0 5px 15px rgba(0,0,0,.05);
+}
+
+.location-left{
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.rank{
+width:42px;
+height:42px;
+border-radius:50%;
+background:#f3f4f6;
+display:flex;
+justify-content:center;
+align-items:center;
+font-weight:bold;
+}
+.location-map-card,
+.location-expense-summary{
+  margin:16px 0;
+  padding:16px;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 5px 15px rgba(0,0,0,.06);
+}
+
+.location-map-header,
+.location-summary-heading,
+.location-expense-items > div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.location-map-header h3,
+.location-summary-heading h3{
+  margin:0;
+  color:#111827;
+}
+
+.location-map-header p,
+.location-expense-summary p,
+.location-summary-heading span{
+  margin:4px 0 0;
+  color:#6b7280;
+  font-size:13px;
+}
+
+.location-map-header > span{
+  padding:6px 9px;
+  border-radius:999px;
+  background:#eff6ff;
+  color:#2563eb;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.location-map{
+  height:280px;
+  margin-top:14px;
+  overflow:hidden;
+  border-radius:14px;
+}
+
+.location-map-marker{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.location-map-marker span{
+  padding:7px 9px;
+  border:2px solid #fff;
+  border-radius:999px;
+  background:#2563eb;
+  box-shadow:0 3px 10px rgba(37,99,235,.35);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.location-map-empty{
+  margin:12px 0 0;
+  color:#6b7280;
+  font-size:13px;
+  line-height:1.45;
+}
+
+.location-expense-summary{
+  border:1px solid #dbeafe;
+}
+
+.location-summary-heading > strong{
+  color:#2563eb;
+  font-size:18px;
+}
+
+.location-expense-items{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:12px;
+}
+
+.location-expense-items > div{
+  padding:10px 0;
+  border-top:1px solid #f1f5f9;
+  color:#374151;
+  font-size:14px;
+}

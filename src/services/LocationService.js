@@ -4,6 +4,7 @@ import { Preferences } from "@capacitor/preferences";
 
 const CACHE_KEY = "tripledger_last_location";
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+const GEOAPIFY_API_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY;
 
 class LocationService {
   async requestPermission() {
@@ -161,8 +162,12 @@ class LocationService {
 
   async reverseGeocode(latitude, longitude) {
     try {
+      if (!GEOAPIFY_API_KEY) {
+        return "";
+      }
+
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+        `https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&format=json&apiKey=${GEOAPIFY_API_KEY}`,
         {
           headers: {
             Accept: "application/json",
@@ -176,10 +181,51 @@ class LocationService {
 
       const data = await response.json();
 
-      return data.display_name || "";
+      return data.results?.[0]?.formatted || "";
     } catch {
       return "";
     }
+  }
+
+  async searchLocations(query) {
+    const searchQuery = query.trim();
+
+    if (!searchQuery) {
+      return [];
+    }
+
+    if (!GEOAPIFY_API_KEY) {
+      throw new Error("Location search is not configured.");
+    }
+
+    const response = await fetch(
+      `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+        searchQuery
+      )}&limit=5&format=json&apiKey=${GEOAPIFY_API_KEY}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Location search is unavailable.");
+    }
+
+    const data = await response.json();
+
+    return (data.results || [])
+      .map((result) => ({
+        locationName: result.formatted,
+        latitude: Number(result.lat),
+        longitude: Number(result.lon),
+      }))
+      .filter(
+        (result) =>
+          Number.isFinite(result.latitude) &&
+          Number.isFinite(result.longitude)
+      );
   }
 }
 

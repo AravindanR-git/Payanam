@@ -2,10 +2,24 @@ import { ulid } from "ulid";
 import db from "../db";
 
 const CategoryRepository = {
-  async getCategories() {
-    return await db.expenseCategories
+  async getCategories(tripType = null, userId = "demo-user") {
+    const categories = await db.expenseCategories
       .orderBy("displayOrder")
       .toArray();
+
+    if (!tripType) {
+      return categories;
+    }
+
+    return categories.filter(
+      (category) =>
+        (!category.tripTypes ||
+          category.tripTypes.includes("all") ||
+          category.tripTypes.includes(tripType)) &&
+        (category.isDefault ||
+          !category.userId ||
+          category.userId === userId)
+    );
   },
 
   async getCategoryById(id) {
@@ -21,6 +35,12 @@ const CategoryRepository = {
       name: data.name.trim(),
 
       icon: data.icon || "📂",
+
+      userId: data.userId || "demo-user",
+
+      tripTypes: data.tripTypes || ["all"],
+
+      isDefault: false,
 
       displayOrder: Date.now(),
 

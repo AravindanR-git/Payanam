@@ -1,6 +1,7 @@
 import { ulid } from "ulid";
 import db from "../db";
 import ItemRepository from "./ItemRepository";
+import LocationService from "../../services/LocationService";
 
 const ExpenseRepository = {
   async createExpense(data) {
@@ -94,6 +95,52 @@ const ExpenseRepository = {
 
   async deleteExpense(id) {
     await db.expenses.delete(id);
+  },
+
+  async resolveMissingManualLocations(limit = 10) {
+    if (!navigator.onLine) {
+      return 0;
+    }
+
+    const unresolvedExpenses = await db.expenses
+      .filter(
+        (expense) =>
+          expense.locationSource === "manual" &&
+          Boolean(expense.locationName?.trim()) &&
+          (expense.latitude === null ||
+            expense.latitude === undefined ||
+            expense.longitude === null ||
+            expense.longitude === undefined)
+      )
+      .limit(limit)
+      .toArray();
+
+    let resolvedCount = 0;
+
+    for (const expense of unresolvedExpenses) {
+      try {
+        const [result] =
+          await LocationService.searchLocations(
+            expense.locationName
+          );
+
+        if (!result) continue;
+
+        await db.expenses.update(expense.id, {
+          latitude: result.latitude,
+          longitude: result.longitude,
+          locationResolvedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          syncStatus: "PENDING",
+        });
+
+        resolvedCount += 1;
+      } catch {
+        // Keep the manual entry unchanged and try again next time online.
+      }
+    }
+
+    return resolvedCount;
   },
 };
 

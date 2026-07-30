@@ -34,6 +34,10 @@ function Journey() {
 
   const [showExpenseSheet, setShowExpenseSheet] =
     useState(false);
+  const [editingExpense, setEditingExpense] =
+    useState(null);
+  const [isEndingJourney, setIsEndingJourney] =
+    useState(false);
 
   useEffect(() => {
     loadJourney();
@@ -101,6 +105,26 @@ function Journey() {
 
   const balance = collected - spent;
 
+  const endJourney = async () => {
+    const confirmed = window.confirm(
+      "End this journey? You can continue it for the next 24 hours if a late expense needs to be added."
+    );
+
+    if (!confirmed) return;
+
+    setIsEndingJourney(true);
+
+    try {
+      await TripRepository.endTrip(trip.id);
+      navigate("/history");
+    } catch (error) {
+      console.error(error);
+      alert("Unable to end the journey. Please try again.");
+    } finally {
+      setIsEndingJourney(false);
+    }
+  };
+
   const totalPeople =
     participants.reduce(
       (total, participant) =>
@@ -125,7 +149,9 @@ function Journey() {
       <p>
         {trip.tripType === "friends"
           ? "Friends Journey"
-          : "Family Journey"}
+          : trip.tripType === "temple"
+            ? "Temple Journey"
+            : "Family Journey"}
       </p>
 
       <div className="balance-card">
@@ -197,9 +223,13 @@ function Journey() {
       <div className="quick-grid">
         <div
           className="quick-card"
-          onClick={() =>
-            setShowExpenseSheet(true)
-          }
+          onClick={() => {
+
+            setEditingExpense(null);
+
+            setShowExpenseSheet(true);
+
+          }}
         >
           <Plus size={28} />
           <span>Add Expense</span>
@@ -218,11 +248,11 @@ function Journey() {
         <div
           className="quick-card"
           onClick={() =>
-            navigate("/expense-history")
+            navigate(`/reports/${trip.id}/overview`)
           }
         >
           <FileText size={28} />
-          <span>Reports</span>
+          <span>Journey Insights</span>
         </div>
       </div>
 
@@ -242,13 +272,13 @@ function Journey() {
               <div>
                 <h4>
                   {expense.selectedItems &&
-                  expense.selectedItems.length >
+                    expense.selectedItems.length >
                     0
                     ? expense.selectedItems
-                        .map(
-                          (item) => item.name
-                        )
-                        .join(", ")
+                      .map(
+                        (item) => item.name
+                      )
+                      .join(", ")
                     : "Expense"}
                 </h4>
 
@@ -278,16 +308,27 @@ function Journey() {
         )}
       </div>
 
-      <Button>
-        End Journey
+      <Button
+        fullWidth
+        disabled={isEndingJourney}
+        onClick={endJourney}
+      >
+        {isEndingJourney
+          ? "Ending Journey..."
+          : "End Journey"}
       </Button>
 
       <AddExpenseSheet
         isOpen={showExpenseSheet}
-        onClose={() =>
-          setShowExpenseSheet(false)
-        }
+        onClose={() => {
+
+          setShowExpenseSheet(false);
+
+          setEditingExpense(null);
+
+        }}
         trip={trip}
+        expense={editingExpense}
         onExpenseSaved={loadJourney}
       />
     </div>

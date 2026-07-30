@@ -1,0 +1,38 @@
+.manual-location-helper,
+.manual-location-error{
+  margin:10px 0 0;
+  font-size:13px;
+  line-height:1.4;
+}
+
+.manual-location-helper{
+  color:#6b7280;
+}
+
+.manual-location-error{
+  color:#b91c1c;
+}
+
+.manual-location-results{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:14px;
+}
+
+.manual-location-results button{
+  border:1px solid #dbeafe;
+  border-radius:12px;
+  padding:11px 12px;
+  background:#f8fbff;
+  color:#1f2937;
+  cursor:pointer;
+  font-size:13px;
+  line-height:1.35;
+  text-align:left;
+}
+
+.manual-location-results button:hover{
+  background:#eff6ff;
+  border-color:#93c5fd;
+}

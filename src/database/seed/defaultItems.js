@@ -86,6 +86,48 @@ const defaultItems = [
     name: "Medicine",
     image: "medicine.jpg",
     displayOrder: 1,
+  },
+
+  {
+    id: "darshan-ticket",
+    categoryId: "temple",
+    name: "Darshan Ticket",
+    displayOrder: 1,
+  },
+
+  {
+    id: "pooja",
+    categoryId: "temple",
+    name: "Pooja / Archana",
+    displayOrder: 2,
+  },
+
+  {
+    id: "prasadam",
+    categoryId: "temple",
+    name: "Prasadam",
+    displayOrder: 3,
+  },
+
+  {
+    id: "special-entry",
+    categoryId: "temple",
+    name: "Special Entry",
+    displayOrder: 4,
+  },
+
+  {
+    id: "hundi",
+    categoryId: "donation",
+    name: "Hundi Donation",
+    displayOrder: 1,
+  },
+
+  {
+    id: "annadanam",
+    categoryId: "donation",
+    name: "Annadanam",
+    displayOrder: 2,
   }
 
 ];

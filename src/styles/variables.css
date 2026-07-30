@@ -2,21 +2,21 @@
 
     /* ---------- Colors ---------- */
 
-    --color-primary:#2563EB;
-    --color-primaryHover:#1D4ED8;
+    --color-primary:#007AFF;
+    --color-primaryHover:#0066D6;
 
     --color-success:#16A34A;
     --color-warning:#F59E0B;
     --color-danger:#DC2626;
 
-    --color-background:#F5F7FB;
+    --color-background:#F2F2F7;
     --color-surface:#FFFFFF;
-    --color-surfaceSecondary:#F8FAFC;
+    --color-surfaceSecondary:#F2F2F7;
 
-    --color-text:#111827;
-    --color-textSecondary:#6B7280;
+    --color-text:#1C1C1E;
+    --color-textSecondary:#6C6C70;
 
-    --color-border:#E5E7EB;
+    --color-border:#E5E5EA;
 
     --color-overlay:rgba(15,23,42,.45);
 

@@ -12,6 +12,7 @@ function AddCategorySheet({
   isOpen,
   onClose,
   category = null,
+  trip = null,
   onSaved,
 }) {
   const [name, setName] = useState("");
@@ -68,6 +69,8 @@ function AddCategorySheet({
         await CategoryRepository.createCategory({
           name,
           icon,
+          userId: trip?.userId,
+          tripTypes: [trip?.tripType || "all"],
         });
     }
 

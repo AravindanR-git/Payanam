@@ -17,6 +17,7 @@ function AddExpenseSheet({
   onClose,
   trip,
   onExpenseSaved,
+  expense = null,
 }) {
   const [step, setStep] = useState(1);
 
@@ -36,11 +37,31 @@ function AddExpenseSheet({
     useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      resetSheet();
-      loadCategories();
-    }
-  }, [isOpen]);
+
+  if (!isOpen) return;
+
+  loadCategories();
+
+  if (expense) {
+
+    setSelectedCategory({
+      id: expense.categoryId,
+      name: expense.categoryName,
+    });
+
+    setSelectedItems(expense.selectedItems || []);
+
+    loadItems(expense.categoryId);
+
+    setStep(3);
+
+  } else {
+
+    resetSheet();
+
+  }
+
+}, [isOpen, expense]);
 
   const resetSheet = () => {
     setStep(1);
@@ -70,7 +91,10 @@ function AddExpenseSheet({
     if (!trip) return;
 
     const list =
-      await CategoryRepository.getCategories();
+      await CategoryRepository.getCategories(
+        trip.tripType,
+        trip.userId
+      );
 
     setCategories(list);
   };
@@ -135,7 +159,7 @@ function AddExpenseSheet({
       <BottomSheet
         isOpen={isOpen}
         onClose={onClose}
-        title="Add Expense"
+        title={expense ? "Edit Expense" : "Add Expense"}
       >
         {step === 1 && (
           <CategoryStep
@@ -166,6 +190,7 @@ function AddExpenseSheet({
             trip={trip}
             category={selectedCategory}
             selectedItems={selectedItems}
+            expense={expense}
             onBack={() => setStep(2)}
             onClose={onClose}
             onSaved={onExpenseSaved}
@@ -179,6 +204,7 @@ function AddExpenseSheet({
           setShowCategorySheet(false)
         }
         category={null}
+        trip={trip}
         onSaved={handleCategoryCreated}
       />
 

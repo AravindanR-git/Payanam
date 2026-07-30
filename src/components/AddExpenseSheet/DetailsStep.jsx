@@ -46,6 +46,7 @@ function DetailsStep({
     latitude: expense?.latitude ?? null,
     longitude: expense?.longitude ?? null,
     locationName: expense?.locationName ?? "",
+    source: expense?.locationSource ?? "none",
   });
 
   const [loadingLocation, setLoadingLocation] =
@@ -78,15 +79,18 @@ function DetailsStep({
       const currentLocation =
         await LocationService.getCurrentLocation(forceRefresh);
 
-      // No location
       if (!currentLocation.latitude) {
-        setLocation({
-          latitude: null,
-          longitude: null,
-          locationName: "",
-          accuracy: null,
-          source: "unknown",
-        });
+        setLocation((previousLocation) =>
+          previousLocation.latitude
+            ? previousLocation
+            : {
+                latitude: null,
+                longitude: null,
+                locationName: "",
+                accuracy: null,
+                source: "none",
+              }
+        );
         return;
       }
 
@@ -97,13 +101,17 @@ function DetailsStep({
     } catch (err) {
       console.error(err);
 
-      setLocation({
-        latitude: null,
-        longitude: null,
-        locationName: "",
-        accuracy: null,
-        source: "unknown",
-      });
+      setLocation((previousLocation) =>
+        previousLocation.latitude
+          ? previousLocation
+          : {
+              latitude: null,
+              longitude: null,
+              locationName: "",
+              accuracy: null,
+              source: "none",
+            }
+      );
     } finally {
       setLoadingLocation(false);
     }
@@ -119,6 +127,14 @@ function DetailsStep({
       latitude: location.latitude,
       longitude: location.longitude,
       locationName: location.locationName,
+
+      locationSource:
+        location.source === "manual"
+          ? "manual"
+          : location.source === "gps" ||
+              location.latitude !== null
+            ? "gps"
+            : "none",
       amount: Number(amount),
 
       notes,
@@ -132,6 +148,7 @@ function DetailsStep({
     };
 
     if (expense) {
+      console.log("Updating expense:", expenseData);
       await ExpenseRepository.updateExpense(
         expense.id,
         expenseData
@@ -180,6 +197,17 @@ function DetailsStep({
     onClose();
   };
 
+
+  const isManualLocation =
+    expense?.locationSource === "manual";
+
+  const hasLocation =
+    !!location.locationName;
+
+  const canEditLocation =
+    !expense ||
+    isManualLocation ||
+    !hasLocation;
   return (
     <div className="details-step">
       <button
@@ -327,18 +355,22 @@ function DetailsStep({
             />
             <span>Location</span>
           </div>
-          {!expense &&
-            !loadingLocation &&
-            !location.latitude && (
-              <div className="location-actions">
+          {!loadingLocation && (
+            <div className="location-actions">
+
+              {!expense && (
                 <button
                   type="button"
                   onClick={() => loadLocation(true)}
                   className="link-btn"
                 >
-                  Retry
+                  {location.latitude
+                    ? "Refresh GPS"
+                    : "Retry GPS"}
                 </button>
+              )}
 
+              {canEditLocation && (
                 <button
                   type="button"
                   className="link-btn"
@@ -346,10 +378,14 @@ function DetailsStep({
                     setShowManualLocation(true)
                   }
                 >
-                  Enter manually
+                  {hasLocation
+                    ? "Edit Manual Location"
+                    : "Add Manual Location"}
                 </button>
-              </div>
-            )}
+              )}
+
+            </div>
+          )}
         </div>
 
         <div className="location-text">
@@ -361,7 +397,7 @@ function DetailsStep({
 
       </div>
 
-            <div className="save-bar">
+      <div className="save-bar">
         <button
           className="save-btn"
           onClick={saveExpense}
@@ -390,6 +426,12 @@ function DetailsStep({
         }
       >
         <ManualLocationSheet
+          initialLocationName={
+            isManualLocation
+              ? location.locationName
+              : ""
+          }
+          coordinates={location}
           onCancel={() =>
             setShowManualLocation(false)
           }

@@ -3,15 +3,29 @@ import defaultCategories from "./defaultCategories";
 import defaultItems from "./defaultItems";
 
 export async function seedDatabase() {
-  const categoryCount = await db.expenseCategories.count();
+  const categoryIds = new Set(
+    (await db.expenseCategories.toArray()).map(
+      (category) => category.id
+    )
+  );
 
-  if (categoryCount === 0) {
-    await db.expenseCategories.bulkAdd(defaultCategories);
+  const missingCategories = defaultCategories.filter(
+    (category) => !categoryIds.has(category.id)
+  );
+
+  if (missingCategories.length) {
+    await db.expenseCategories.bulkAdd(missingCategories);
   }
 
-  const itemCount = await db.expenseItems.count();
+  const itemIds = new Set(
+    (await db.expenseItems.toArray()).map((item) => item.id)
+  );
 
-  if (itemCount === 0) {
-    await db.expenseItems.bulkAdd(defaultItems);
+  const missingItems = defaultItems.filter(
+    (item) => !itemIds.has(item.id)
+  );
+
+  if (missingItems.length) {
+    await db.expenseItems.bulkAdd(missingItems);
   }
 }

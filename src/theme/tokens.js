@@ -1,11 +1,11 @@
 const tokens = {
   radius: {
-    xs: "8px",
-    sm: "12px",
-    md: "16px",
-    lg: "20px",
-    xl: "24px",
-    xxl: "30px",
+    xs: "10px",
+    sm: "14px",
+    md: "18px",
+    lg: "22px",
+    xl: "26px",
+    xxl: "32px",
     pill: "999px",
   },
 
@@ -21,9 +21,9 @@ const tokens = {
   },
 
   shadow: {
-    sm: "0 2px 8px rgba(15,23,42,.06)",
-    md: "0 8px 24px rgba(15,23,42,.08)",
-    lg: "0 16px 40px rgba(15,23,42,.12)",
+    sm: "0 1px 2px rgba(0,0,0,.04)",
+    md: "0 8px 24px rgba(0,0,0,.08)",
+    lg: "0 18px 42px rgba(0,0,0,.13)",
   },
 
   animation: {

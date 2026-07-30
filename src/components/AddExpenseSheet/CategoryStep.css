@@ -72,3 +72,15 @@
     backdrop-filter:blur(6px);
 
 }
+.category-step {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 12px;
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}

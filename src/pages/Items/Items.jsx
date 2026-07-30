@@ -95,7 +95,7 @@ function Items() {
         className="back-btn"
         onClick={() => navigate(-1)}
       >
-        <ArrowLeft size={20}/>
+        <ArrowLeft size={20} />
       </button>
 
       <div className="items-header">
@@ -134,98 +134,98 @@ function Items() {
 
         items.length === 0 ?
 
-        <div className="empty-card">
+          <div className="empty-card">
 
-          <h3>No Items</h3>
+            <h3>No Items</h3>
 
-          <p>
+            <p>
 
-            Add your first expense item.
+              Add your first expense item.
 
-          </p>
+            </p>
 
-        </div>
+          </div>
 
-        :
+          :
 
-        <div className="items-list">
+          <div className="items-list">
 
-          {
+            {
 
-            items.map(item => (
+              items.map(item => (
 
-              <div
-                key={item.id}
-                className="item-card"
-              >
+                <div
+                  key={item.id}
+                  className="item-card"
+                >
 
-                <div className="item-left">
+                  <div className="item-left">
 
-                  <IconAvatar
-                    icon={item.icon}
-                    name={item.name}
-                    size={40}
-                  />
+                    <IconAvatar
+                      icon={item.icon}
+                      name={item.name}
+                      size={40}
+                    />
 
-                  <div className="item-text">
+                    <div className="item-text">
 
-                    <span className="item-title">
+                      <span className="item-title">
 
-                      {item.name}
+                        {item.name}
 
-                    </span>
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                  <div className="item-actions">
+
+                    <button
+
+                      className="item-action"
+
+                      onClick={(e) => {
+
+                        e.stopPropagation();
+
+                        editItem(item);
+
+                      }}
+
+                    >
+
+                      <Pencil size={18} />
+
+                    </button>
+
+                    <button
+
+                      className="item-action delete"
+
+                      onClick={(e) => {
+
+                        e.stopPropagation();
+
+                        deleteItem(item);
+
+                      }}
+
+                    >
+
+                      <Trash2 size={18} />
+
+                    </button>
 
                   </div>
 
                 </div>
 
-                <div className="item-actions">
+              ))
 
-                  <button
+            }
 
-                    className="item-action"
-
-                    onClick={(e) => {
-
-                      e.stopPropagation();
-
-                      editItem(item);
-
-                    }}
-
-                  >
-
-                    <Pencil size={18}/>
-
-                  </button>
-
-                  <button
-
-                    className="item-action delete"
-
-                    onClick={(e) => {
-
-                      e.stopPropagation();
-
-                      deleteItem(item);
-
-                    }}
-
-                  >
-
-                    <Trash2 size={18}/>
-
-                  </button>
-
-                </div>
-
-              </div>
-
-            ))
-
-          }
-
-        </div>
+          </div>
 
       }
 
@@ -234,7 +234,7 @@ function Items() {
         onClick={addItem}
       >
 
-        <Plus size={26}/>
+        <Plus size={26} />
 
       </button>
 
@@ -254,8 +254,11 @@ function Items() {
 
         item={selectedItem}
 
-        onSaved={loadItems}
-
+        onSaved={async () => {
+          await loadItems();
+          setShowSheet(false);
+          setEditingItem(null);
+        }}
       />
 
     </div>

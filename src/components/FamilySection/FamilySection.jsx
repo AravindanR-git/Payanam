@@ -18,12 +18,18 @@ function FamilySection({
   families,
   setFamilies,
   defaultContributionPerPerson,
+  groupLabel = "Family",
+  groupLabelPlural = "Families",
+  nameLabel = "Family Name",
+  namePlaceholder = "Murugan Family",
+  defaultAdults = 2,
 }) {
   const emptyForm = {
     familyName: "",
-    adults: 2,
+    adults: defaultAdults,
     children: 0,
-    contribution: defaultContributionPerPerson * 2,
+    contribution:
+      defaultContributionPerPerson * defaultAdults,
   };
 
   const [showSheet, setShowSheet] = useState(false);
@@ -35,10 +41,10 @@ function FamilySection({
 
     setForm({
       familyName: "",
-      adults: 2,
+      adults: defaultAdults,
       children: 0,
       contribution:
-        defaultContributionPerPerson * 2,
+        defaultContributionPerPerson * defaultAdults,
     });
 
     setShowSheet(true);
@@ -52,7 +58,7 @@ function FamilySection({
 
   const saveFamily = () => {
     if (!form.familyName.trim()) {
-      alert("Please enter family name.");
+      alert(`Please enter ${nameLabel.toLowerCase()}.`);
       return;
     }
 
@@ -88,8 +94,8 @@ function FamilySection({
     <>
       <div className="family-header">
         <div>
-          <h2>Families</h2>
-          <p>{families.length} Family(s)</p>
+          <h2>{groupLabelPlural}</h2>
+          <p>{families.length} {groupLabel}(s)</p>
         </div>
 
         <Button
@@ -106,11 +112,11 @@ function FamilySection({
           <div className="family-empty">
             <Users size={42} />
 
-            <h3>No Families Added</h3>
+            <h3>No {groupLabelPlural} Added</h3>
 
             <p>
               Tap <strong>Add</strong> to
-              include your first family.
+              include your first {groupLabel.toLowerCase()}.
             </p>
           </div>
         </Card>
@@ -189,14 +195,14 @@ function FamilySection({
         }
         title={
           editingId
-            ? "Edit Family"
-            : "Add Family"
+            ? `Edit ${groupLabel}`
+            : `Add ${groupLabel}`
         }
       >
         <Input
-          label="Family Name"
+          label={nameLabel}
           value={form.familyName}
-          placeholder="Murugan Family"
+          placeholder={namePlaceholder}
           onChange={(e) =>
             setForm({
               ...form,

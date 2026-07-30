@@ -2,7 +2,7 @@
 
     border:none;
 
-    border-radius:var(--radius-lg);
+    border-radius:16px;
 
     cursor:pointer;
 
@@ -50,13 +50,9 @@
 
 }
 
-.app-button-primary:hover{
+.app-button-primary:hover{ box-shadow:var(--shadow-sm); }
 
-    transform:translateY(-2px);
-
-    box-shadow:var(--shadow-md);
-
-}
+.app-button:active:not(:disabled){ transform:scale(.97); }
 
 .app-button-outline{
 

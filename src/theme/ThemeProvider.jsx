@@ -10,7 +10,7 @@ function ThemeProvider({ children }) {
   const [settings, setSettings] = useState(
     saved || {
       mode: "light",
-      accent: "#2563EB",
+      accent: "#007AFF",
     }
   );
 
@@ -26,19 +26,16 @@ function ThemeProvider({ children }) {
   useEffect(() => {
     const root = document.documentElement;
 
-    root.style.setProperty(
-      "--color-primary",
-      settings.accent
-    );
-
     Object.entries(theme.colors).forEach(
       ([key, value]) => {
         root.style.setProperty(
           `--color-${key}`,
-          value
+          key === "primary" ? settings.accent : value
         );
       }
     );
+
+    root.dataset.theme = settings.mode;
 
     Object.entries(theme.tokens.radius).forEach(
       ([key, value]) => {

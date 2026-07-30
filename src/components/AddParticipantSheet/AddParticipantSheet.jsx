@@ -18,6 +18,19 @@ function AddParticipantSheet({
   const isFamilyTrip =
     trip.tripType === "family";
 
+  const isTempleTrip =
+    trip.tripType === "temple";
+
+  const supportsCompanions =
+    isFamilyTrip || isTempleTrip;
+
+  const participantLabel =
+    isTempleTrip
+      ? "Pilgrim"
+      : isFamilyTrip
+        ? "Family"
+        : "Friend";
+
   const [name, setName] = useState("");
 
   const [adults, setAdults] = useState(1);
@@ -62,9 +75,7 @@ function AddParticipantSheet({
     if (!name.trim()) {
 
       alert(
-        isFamilyTrip
-          ? "Enter family name."
-          : "Enter friend name."
+        `Enter ${participantLabel.toLowerCase()} name.`
       );
 
       return;
@@ -76,19 +87,26 @@ function AddParticipantSheet({
       name,
 
       adults:
-        isFamilyTrip
+        supportsCompanions
           ? adults
           : null,
 
       children:
-        isFamilyTrip
+        supportsCompanions
           ? children
           : null,
 
       memberCount:
-        isFamilyTrip
+        supportsCompanions
           ? adults + children
           : 1,
+
+      type:
+        isTempleTrip
+          ? "pilgrim"
+          : isFamilyTrip
+            ? "family"
+            : "friend",
 
       initialContribution:
         Number(contribution) || 0,
@@ -136,13 +154,9 @@ function AddParticipantSheet({
 
         participant
 
-          ? isFamilyTrip
-            ? "Edit Family"
-            : "Edit Friend"
+          ? `Edit ${participantLabel}`
 
-          : isFamilyTrip
-            ? "Add Family"
-            : "Add Friend"
+          : `Add ${participantLabel}`
 
       }
     >
@@ -150,9 +164,7 @@ function AddParticipantSheet({
       <input
         className="sheet-input"
         placeholder={
-          isFamilyTrip
-            ? "Family Name"
-            : "Friend Name"
+          `${participantLabel} Name`
         }
         value={name}
         onChange={(e)=>
@@ -162,7 +174,7 @@ function AddParticipantSheet({
 
       {
 
-        isFamilyTrip && (
+        supportsCompanions && (
 
           <>
 

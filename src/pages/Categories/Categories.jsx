@@ -227,7 +227,11 @@ function Categories() {
 
         category={selectedCategory}
 
-        onSaved={loadCategories}
+        onSaved={async () => {
+          await loadCategories();
+          setShowSheet(false);
+          setEditingCategory(null);
+        }}
 
       />
 

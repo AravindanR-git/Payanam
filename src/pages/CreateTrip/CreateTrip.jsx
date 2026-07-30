@@ -1,11 +1,25 @@
 import "./CreateTrip.css";
 import { motion } from "framer-motion";
 import { Users, Landmark, ArrowLeft } from "lucide-react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import TripRepository from "../../database/repositories/TripRepository";
 
 function CreateTrip() {
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const guardActiveJourney = async () => {
+            const activeTrip = await TripRepository.getActiveTrip();
+
+            if (activeTrip) {
+                navigate("/journey", { replace: true });
+            }
+        };
+
+        guardActiveJourney();
+    }, [navigate]);
 
     return (
 
@@ -48,7 +62,7 @@ function CreateTrip() {
 
                 <div
                     className="trip-card"
-                    onClick={() => alert("Coming Soon")}
+                    onClick={() => navigate("/thiru-payanam")}
                 >
 
                     <Landmark size={40} />
