@@ -11,9 +11,11 @@ import {
 import db from "../../database/db";
 import "./DayWiseAnalysis.css";
 import InsightsNav from "../../components/Insights/InsightsNav";
+import useLanguage from "../../i18n/useLanguage";
 
 export default function DayWiseAnalysis() {
   const { tripId } = useParams();
+  const { t } = useLanguage();
 
   const [data, setData] = useState([]);
 
@@ -57,7 +59,7 @@ export default function DayWiseAnalysis() {
         <InsightsNav />
         
 
-      <h2>Day Wise Expenses</h2>
+      <h2>{t("dayWiseExpenses")}</h2>
 
       <div className="graph-card">
 

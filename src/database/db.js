@@ -25,29 +25,6 @@ db.version(1).stores({
   pendingSync: "id,tableName,status",
 });
 
-db.version(2).stores({
-  users: "id,email",
-
-  trips: "id,userId,status,tripType,tripName,createdAt",
-
-  participants: "id,tripId,type,name",
-
-  contributions: "id,tripId,participantId,createdAt",
-
-  expenseCategories: "id,userId,tripType,name,displayOrder",
-
-  expenseItems: "id,categoryId,name,displayOrder",
-
-  places: "id,name,displayOrder",
-
-  expenses:
-    "id,tripId,categoryId,itemId,amount,expenseTime,syncStatus",
-
-  activities: "id,tripId,createdAt",
-
-  pendingSync: "id,tableName,status",
-});
-
 db.version(3)
   .stores({
     users: "id,email",
@@ -196,6 +173,85 @@ db.version(4)
 
       });
 
+  });
+
+db.version(5)
+  .stores({
+    users: "id,email",
+
+    trips:
+      "id,userId,status,tripType,tripName,createdAt",
+
+    participants:
+      "id,tripId,type,name",
+
+    contributions:
+      "id,tripId,participantId,createdAt",
+
+    expenseCategories:
+      "id,userId,tripType,name,displayOrder",
+
+    expenseItems:
+      "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed",
+
+    places:
+      "id,name,displayOrder",
+
+    expenses:
+      "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus",
+
+    activities:
+      "id,tripId,type,createdAt",
+
+    pendingSync:
+      "id,tableName,status,createdAt",
+  })
+  .upgrade(async (tx) => {
+    await tx.table("pendingSync")
+      .toCollection()
+      .modify(row => {
+        row.createdAt ??= new Date().toISOString();
+      });
+  });
+
+db.version(6)
+  .stores({
+    users: "id,email",
+
+    trips:
+      "id,userId,status,tripType,tripName,createdAt",
+
+    participants:
+      "id,tripId,type,name",
+
+    contributions:
+      "id,tripId,participantId,createdAt",
+
+    expenseCategories:
+      "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+
+    expenseItems:
+      "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed",
+
+    places:
+      "id,name,displayOrder",
+
+    expenses:
+      "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus",
+
+    activities:
+      "id,tripId,type,createdAt",
+
+    pendingSync:
+      "id,tableName,status,createdAt",
+  })
+  .upgrade(async (tx) => {
+    await tx.table("expenseCategories")
+      .toCollection()
+      .modify(category => {
+        category.usageCount ??= 0;
+        category.lastUsed ??= null;
+      });
   });
 
 export default db;

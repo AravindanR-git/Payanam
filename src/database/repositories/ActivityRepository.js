@@ -1,15 +1,23 @@
 import { ulid } from "ulid";
 import db from "../db";
+import SyncService from "../../services/syncService";
 
 const ActivityRepository = {
 
   async addActivity(data) {
 
-    await db.activities.add({
+    const activity = {
+
       id: ulid(),
+
       createdAt: new Date().toISOString(),
+
       ...data,
-    });
+    };
+
+    await db.activities.add(activity);
+
+    SyncService.enqueue("activities", activity.id, "CREATE", activity);
 
   },
 
@@ -18,8 +26,9 @@ const ActivityRepository = {
     return await db.activities
       .where("tripId")
       .equals(tripId)
+      .orderBy("createdAt")
       .reverse()
-      .sortBy("createdAt");
+      .toArray();
 
   }
 

@@ -195,37 +195,41 @@ class LocationService {
     }
 
     if (!GEOAPIFY_API_KEY) {
-      throw new Error("Location search is not configured.");
+      return [];
     }
 
-    const response = await fetch(
-      `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
-        searchQuery
-      )}&limit=5&format=json&apiKey=${GEOAPIFY_API_KEY}`,
-      {
-        headers: {
-          Accept: "application/json",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Location search is unavailable.");
-    }
-
-    const data = await response.json();
-
-    return (data.results || [])
-      .map((result) => ({
-        locationName: result.formatted,
-        latitude: Number(result.lat),
-        longitude: Number(result.lon),
-      }))
-      .filter(
-        (result) =>
-          Number.isFinite(result.latitude) &&
-          Number.isFinite(result.longitude)
+    try {
+      const response = await fetch(
+        `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+          searchQuery
+        )}&limit=5&format=json&apiKey=${GEOAPIFY_API_KEY}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
       );
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+
+      return (data.results || [])
+        .map((result) => ({
+          locationName: result.formatted,
+          latitude: Number(result.lat),
+          longitude: Number(result.lon),
+        }))
+        .filter(
+          (result) =>
+            Number.isFinite(result.latitude) &&
+            Number.isFinite(result.longitude)
+        );
+    } catch {
+      return [];
+    }
   }
 }
 

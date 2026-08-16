@@ -4,6 +4,7 @@ import BottomSheet from "../BottomSheet/BottomSheet";
 import Button from "../Button/Button";
 
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
+import useLanguage from "../../i18n/useLanguage";
 
 function AddParticipantSheet({
   isOpen,
@@ -12,6 +13,7 @@ function AddParticipantSheet({
   participant = null,
   onSaved,
 }) {
+  const { t } = useLanguage();
 
   if (!trip) return null;
 
@@ -26,10 +28,10 @@ function AddParticipantSheet({
 
   const participantLabel =
     isTempleTrip
-      ? "Pilgrim"
+      ? t("pilgrim")
       : isFamilyTrip
-        ? "Family"
-        : "Friend";
+        ? t("family")
+        : t("friend");
 
   const [name, setName] = useState("");
 
@@ -75,7 +77,7 @@ function AddParticipantSheet({
     if (!name.trim()) {
 
       alert(
-        `Enter ${participantLabel.toLowerCase()} name.`
+        t("enterName", { label: participantLabel.toLowerCase() })
       );
 
       return;
@@ -154,9 +156,9 @@ function AddParticipantSheet({
 
         participant
 
-          ? `Edit ${participantLabel}`
+          ? `${t("edit")} ${participantLabel}`
 
-          : `Add ${participantLabel}`
+          : `${t("add")} ${participantLabel}`
 
       }
     >
@@ -164,7 +166,7 @@ function AddParticipantSheet({
       <input
         className="sheet-input"
         placeholder={
-          `${participantLabel} Name`
+          `${participantLabel} ${t("name")}`
         }
         value={name}
         onChange={(e)=>
@@ -180,7 +182,7 @@ function AddParticipantSheet({
 
             <div className="counter-card">
 
-              <span>Adults</span>
+              <span>{t("adults")}</span>
 
               <div className="counter">
 
@@ -221,7 +223,7 @@ function AddParticipantSheet({
 
             <div className="counter-card">
 
-              <span>Children</span>
+              <span>{t("children")}</span>
 
               <div className="counter">
 
@@ -269,7 +271,7 @@ function AddParticipantSheet({
       <input
         className="sheet-input"
         type="number"
-        placeholder="Contribution"
+        placeholder={t("contribution")}
         value={contribution}
         onChange={(e)=>
           setContribution(
@@ -286,9 +288,9 @@ function AddParticipantSheet({
 
           participant
 
-            ? "Update Participant"
+            ? `${t("update")} ${participantLabel}`
 
-            : "Save Participant"
+            : `${t("save")} ${participantLabel}`
 
         }
 

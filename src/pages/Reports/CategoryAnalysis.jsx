@@ -17,6 +17,7 @@ import db from "../../database/db";
 import "./CategoryAnalysis.css";
 import InsightsNav from "../../components/Insights/InsightsNav";
 import IconAvatar from "../../components/IconAvatar/IconAvatar";
+import useLanguage from "../../i18n/useLanguage";
 
 const COLORS = [
     "#3B82F6",
@@ -49,6 +50,7 @@ function CategoryBarTooltip({ active, payload }) {
 export default function CategoryAnalysis() {
     const { tripId } = useParams();
     const navigate = useNavigate();
+    const { t } = useLanguage();
 
     const [view, setView] = useState("pie");
 
@@ -181,7 +183,7 @@ export default function CategoryAnalysis() {
             <div className="category-summary">
 
                 <div className="summary-card">
-                    <span>Total Spent</span>
+                    <span>{t("totalSpent")}</span>
                     <h2>
                         ₹
                         {summary.totalSpent.toLocaleString("en-IN")}
@@ -189,12 +191,12 @@ export default function CategoryAnalysis() {
                 </div>
 
                 <div className="summary-card">
-                    <span>Categories</span>
+                    <span>{t("categories")}</span>
                     <h2>{summary.totalCategories}</h2>
                 </div>
 
                 <div className="summary-card">
-                    <span>Transactions</span>
+                    <span>{t("transactions")}</span>
                     <h2>{summary.totalTransactions}</h2>
                 </div>
 
@@ -206,21 +208,21 @@ export default function CategoryAnalysis() {
                     className={view === "pie" ? "active" : ""}
                     onClick={() => setView("pie")}
                 >
-                    🥧 Pie
+                    🥧 {t("pie")}
                 </button>
 
                 <button
                     className={view === "bar" ? "active" : ""}
                     onClick={() => setView("bar")}
                 >
-                    📊 Bar
+                    📊 {t("bar")}
                 </button>
 
                 <button
                     className={view === "list" ? "active" : ""}
                     onClick={() => setView("list")}
                 >
-                    📋 List
+                    📋 {t("list")}
                 </button>
 
             </div>
@@ -300,7 +302,6 @@ export default function CategoryAnalysis() {
                             </BarChart>
 
                         )}
-
                     </ResponsiveContainer>
 
                 </div>
@@ -334,15 +335,9 @@ export default function CategoryAnalysis() {
                                     />
                                 </div>
 
-
-
                             </div>
 
                             <h3>{item.name}</h3>
-
-
-
-                            
 
                             <div className="category-amount">
                                 ₹{item.value.toLocaleString("en-IN")}
@@ -370,17 +365,17 @@ export default function CategoryAnalysis() {
                    <div className="detail-grid">
 
     <div className="detail-item">
-        <span>Total Spent</span>
+        <span>{t("totalSpent")}</span>
         <h4>₹{selected.value.toLocaleString("en-IN")}</h4>
     </div>
 
     <div className="detail-item">
-        <span>Transactions</span>
+        <span>{t("transactions")}</span>
         <h4>{selected.transactionCount}</h4>
     </div>
 
     <div className="detail-item">
-        <span>Latest</span>
+        <span>{t("latest")}</span>
         <h4>
             {selected.latest
                 ? new Date(selected.latest.expenseTime).toLocaleDateString("en-IN")
@@ -389,7 +384,7 @@ export default function CategoryAnalysis() {
     </div>
 
     <div className="detail-item">
-        <span>Last Expense</span>
+        <span>{t("lastExpense")}</span>
         <h4>
             ₹{selected.latest
                 ? Number(selected.latest.amount).toLocaleString("en-IN")
@@ -410,8 +405,8 @@ export default function CategoryAnalysis() {
                     <div className="card-header">
 
                         <h3>
-                            Recent{" "}
-                            {selected.name} Expenses
+                            {t("recent")}{" "}
+                            {selected.name} {t("expensesCount")}
                         </h3>
 
                         <button
@@ -423,7 +418,7 @@ export default function CategoryAnalysis() {
                                 )
                             }
                         >
-                            View History →
+                            {t("viewHistory")} →
                         </button>
 
                     </div>
@@ -431,7 +426,7 @@ export default function CategoryAnalysis() {
                     {recentExpenses.length === 0 ? (
 
                         <p>
-                            No expenses available.
+                            {t("noExpensesFound")}
                         </p>
 
                     ) : (
@@ -448,23 +443,21 @@ export default function CategoryAnalysis() {
 
                                         <strong>
 
-                                            {expense
-                                                .selectedItems
-                                                ?.length
+                                            {expense.selectedItems?.length
                                                 ? expense.selectedItems
                                                     .map(
                                                         (i) =>
                                                             i.name
                                                     )
                                                     .join(", ")
-                                                : "Expense"}
+                                                : t("expense")}
 
                                         </strong>
 
                                         <small>
 
                                             {expense.locationName ||
-                                                "Unknown"}
+                                                t("unknown")}
 
                                         </small>
 

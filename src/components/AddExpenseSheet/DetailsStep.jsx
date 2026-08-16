@@ -8,6 +8,7 @@ import ExpenseRepository from "../../database/repositories/ExpenseRepository";
 import LocationService from "../../services/LocationService";
 import BottomSheet from "../BottomSheet/BottomSheet";
 import ManualLocationSheet from "./ManualLocationSheet";
+import useLanguage from "../../i18n/useLanguage";
 
 function DetailsStep({
   trip,
@@ -18,6 +19,7 @@ function DetailsStep({
   onClose,
   onSaved,
 }) {
+  const { t } = useLanguage();
   const [amount, setAmount] = useState(
     expense?.amount || ""
   );
@@ -96,7 +98,6 @@ function DetailsStep({
 
 
 
-
       setLocation(currentLocation);
     } catch (err) {
       console.error(err);
@@ -119,7 +120,7 @@ function DetailsStep({
 
   const saveExpense = async () => {
     if (!amount || Number(amount) <= 0) {
-      alert("Please enter a valid amount.");
+      alert(t("enterValidAmount"));
       return;
     }
 
@@ -181,7 +182,7 @@ function DetailsStep({
     if (!expense) return;
 
     const ok = window.confirm(
-      "Delete this expense?"
+      t("deleteExpenseConfirm")
     );
 
     if (!ok) return;
@@ -215,7 +216,7 @@ function DetailsStep({
         className="back-step-btn"
         onClick={onBack}
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <h3 className="details-title">
@@ -225,7 +226,7 @@ function DetailsStep({
       {selectedItems.length > 0 && (
         <div className="details-card">
           <h4 className="section-title">
-            Selected Items
+            {t("selectedItems")}
           </h4>
 
           <div className="items-container">
@@ -243,13 +244,13 @@ function DetailsStep({
 
       <div className="details-card amount-card">
         <h4 className="section-title">
-          Expense Amount
+          {t("expenseAmount")}
         </h4>
 
         <input
           className="amount-input"
           type="number"
-          placeholder="Amount"
+          placeholder={t("amount")}
           value={amount}
           onChange={(e) =>
             setAmount(e.target.value)
@@ -259,13 +260,13 @@ function DetailsStep({
 
       <div className="details-card">
         <h4 className="section-title">
-          Notes
+          {t("notes")}
         </h4>
 
         <textarea
           className="notes-input"
 
-          placeholder="Description (Optional)"
+          placeholder={t("descriptionOptional")}
           value={notes}
           onChange={(e) =>
             setNotes(e.target.value)
@@ -275,7 +276,7 @@ function DetailsStep({
 
       <div className="details-card">
         <h4 className="section-title">
-          Money Source
+          {t("moneySource")}
         </h4>
 
         <div className="payment-toggle">
@@ -289,7 +290,7 @@ function DetailsStep({
               setPaymentSource("fund")
             }
           >
-            💰 Trip Fund
+            💰 {t("tripFund")}
           </button>
 
           <button
@@ -305,7 +306,7 @@ function DetailsStep({
               )
             }
           >
-            👤 Personal
+            👤 {t("paidByPerson")}
           </button>
         </div>
 
@@ -353,7 +354,7 @@ function DetailsStep({
               size={20}
               color="#2563eb"
             />
-            <span>Location</span>
+            <span>{t("location")}</span>
           </div>
           {!loadingLocation && (
             <div className="location-actions">
@@ -365,8 +366,8 @@ function DetailsStep({
                   className="link-btn"
                 >
                   {location.latitude
-                    ? "Refresh GPS"
-                    : "Retry GPS"}
+                    ? t("refreshGPS")
+                    : t("retryGPS")}
                 </button>
               )}
 
@@ -379,8 +380,8 @@ function DetailsStep({
                   }
                 >
                   {hasLocation
-                    ? "Edit Manual Location"
-                    : "Add Manual Location"}
+                    ? t("editManualLocation")
+                    : t("addManualLocation")}
                 </button>
               )}
 
@@ -390,8 +391,8 @@ function DetailsStep({
 
         <div className="location-text">
           {loadingLocation
-            ? "📍 Detecting location..."
-            : location.locationName || "📍 Location unavailable"}
+            ? `📍 ${t("detectingLocation")}`
+            : location.locationName || `📍 ${t("locationUnavailable")}`}
         </div>
 
 
@@ -403,8 +404,8 @@ function DetailsStep({
           onClick={saveExpense}
         >
           {expense
-            ? "Update Expense"
-            : "Save Expense"}
+            ? t("updateExpense")
+            : t("saveExpense")}
         </button>
       </div>
 
@@ -414,33 +415,33 @@ function DetailsStep({
             variant="danger"
             onClick={deleteExpense}
           >
-            Delete Expense
+            {t("deleteExpense")}
           </Button>
         </div>
       )}
 
-      <BottomSheet
+      <ManualLocationSheet
         isOpen={showManualLocation}
         onClose={() =>
           setShowManualLocation(false)
         }
-      >
-        <ManualLocationSheet
-          initialLocationName={
-            isManualLocation
-              ? location.locationName
-              : ""
-          }
-          coordinates={location}
-          onCancel={() =>
-            setShowManualLocation(false)
-          }
-          onSave={(manualLocation) => {
-            setLocation(manualLocation);
-            setShowManualLocation(false);
-          }}
-        />
-      </BottomSheet>
+        initialLocationName={
+          location.locationName
+        }
+        coordinates={{
+          latitude: location.latitude,
+          longitude: location.longitude,
+        }}
+        onSave={(updatedLocation) => {
+          setLocation({
+            latitude: updatedLocation.latitude,
+            longitude: updatedLocation.longitude,
+            locationName: updatedLocation.locationName,
+            source: "manual",
+          });
+          setShowManualLocation(false);
+        }}
+      />
     </div>
   );
 }

@@ -11,11 +11,15 @@ import PageHeader from "../../components/PageHeader/PageHeader";
 import FamilySection from "../../components/FamilySection/FamilySection";
 import TripRepository from "../../database/repositories/TripRepository";
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
+import useLanguage from "../../i18n/useLanguage";
+import { useAuth } from "../../contexts/useAuth";
 
 const TEMPLE_OPTIONS = ["Sabarimala", "Tirumala", "Custom Temple"];
 
 function ThiruPayanam() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const { user } = useAuth();
   const [templeOption, setTempleOption] = useState("Sabarimala");
   const [customTempleName, setCustomTempleName] = useState("");
   const [journeyName, setJourneyName] = useState("");
@@ -42,17 +46,17 @@ function ThiruPayanam() {
 
   const createJourney = async () => {
     if (!templeName) {
-      alert("Enter the temple name.");
+      alert(t("enterTempleName"));
       return;
     }
 
     if (!journeyName.trim()) {
-      alert("Enter a journey name.");
+      alert(t("enterJourneyName"));
       return;
     }
 
     if (pilgrims.length === 0) {
-      alert("Add at least one pilgrim.");
+      alert(t("addAtLeastOnePilgrim"));
       return;
     }
 
@@ -60,7 +64,7 @@ function ThiruPayanam() {
 
     try {
       const trip = await TripRepository.createTrip({
-        userId: "demo-user",
+        userId: user?.id,
         tripName: journeyName.trim(),
         tripType: "temple",
         templeName,
@@ -84,7 +88,7 @@ function ThiruPayanam() {
       navigate("/journey");
     } catch (error) {
       console.error(error);
-      alert("Unable to create the temple journey.");
+      alert(t("unableToCreateTempleJourney"));
     } finally {
       setIsCreating(false);
     }
@@ -101,17 +105,17 @@ function ThiruPayanam() {
       </button>
 
       <PageHeader
-        title="Thiru Payanam"
-        subtitle="Plan a temple journey and its shared expenses"
+        title={t("thiruPayanam")}
+        subtitle={t("planTempleJourney")}
       />
 
       <Card className="temple-setup-card">
         <div className="temple-title-row">
           <Landmark size={22} />
-          <h2>Temple Details</h2>
+          <h2>{t("templeDetails")}</h2>
         </div>
 
-        <label className="temple-field-label">Temple</label>
+        <label className="temple-field-label">{t("temple")}</label>
         <div className="temple-options">
           {TEMPLE_OPTIONS.map((option) => (
             <button
@@ -131,22 +135,22 @@ function ThiruPayanam() {
 
         {templeOption === "Custom Temple" && (
           <Input
-            label="Temple Name"
+            label={t("templeName")}
             value={customTempleName}
-            placeholder="Eg. Arupadai Veedu or Thiruvannamalai"
+            placeholder={t("templeNamePlaceholder")}
             onChange={(event) => setCustomTempleName(event.target.value)}
           />
         )}
 
         <Input
-          label="Journey Name"
+          label={t("journeyName")}
           value={journeyName}
-          placeholder={`${templeName || "Temple"} Pilgrimage`}
+          placeholder={`${templeName || t("temple")} ${t("pilgrimage")}`}
           onChange={(event) => setJourneyName(event.target.value)}
         />
 
         <Input
-          label="Contribution Per Person"
+          label={t("contributionPerPerson")}
           type="number"
           value={contributionPerPerson}
           onChange={(event) =>
@@ -161,15 +165,15 @@ function ThiruPayanam() {
         defaultContributionPerPerson={contributionPerPerson}
         groupLabel="Pilgrim"
         groupLabelPlural="Pilgrims"
-        nameLabel="Pilgrim Name"
-        namePlaceholder="Enter pilgrim name"
+        nameLabel={t("pilgrimName")}
+        namePlaceholder={t("enterPilgrimName")}
         defaultAdults={1}
       />
 
       <Card className="temple-summary-card">
-        <h3>Journey Summary</h3>
-        <div><span>Pilgrim entries</span><strong>{pilgrims.length}</strong></div>
-        <div><span>Total people</span><strong>{totalPeople}</strong></div>
+        <h3>{t("journeySummary")}</h3>
+        <div><span>{t("pilgrimEntries")}</span><strong>{pilgrims.length}</strong></div>
+        <div><span>{t("totalPeople")}</span><strong>{totalPeople}</strong></div>
         <div className="temple-summary-total">
           ₹{totalCollected.toLocaleString("en-IN")}
         </div>
@@ -177,7 +181,7 @@ function ThiruPayanam() {
 
       <div className="create-button">
         <Button fullWidth disabled={isCreating} onClick={createJourney}>
-          {isCreating ? "Creating Journey..." : "Create Temple Journey"}
+          {isCreating ? t("creatingJourney") : t("createTempleJourney")}
         </Button>
       </div>
     </div>

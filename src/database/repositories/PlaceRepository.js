@@ -1,5 +1,6 @@
 import { ulid } from "ulid";
 import db from "../db";
+import SyncService from "../../services/syncService";
 
 const PlaceRepository = {
 
@@ -29,8 +30,9 @@ const PlaceRepository = {
 
     await db.places.add(place);
 
-    return place;
+    SyncService.enqueue("places", place.id, "CREATE", place);
 
+    return place;
   },
 
   async updatePlace(id, data) {
@@ -43,11 +45,15 @@ const PlaceRepository = {
 
     });
 
+    SyncService.enqueue("places", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
+
   },
 
   async deletePlace(id) {
 
     await db.places.delete(id);
+
+    SyncService.enqueue("places", id, "DELETE", { id });
 
   },
 

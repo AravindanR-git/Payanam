@@ -11,9 +11,11 @@ import CategoryRepository from "../../database/repositories/CategoryRepository";
 
 import DetailsStep from "../../components/AddExpenseSheet/DetailsStep";
 import BottomSheet from "../../components/BottomSheet/BottomSheet";
+import useLanguage from "../../i18n/useLanguage";
 
 function ExpenseHistory() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [trip, setTrip] = useState(null);
 
@@ -80,7 +82,7 @@ function ExpenseHistory() {
     setSelectedExpense(expense);
 
     const categories =
-      await CategoryRepository.getCategories();
+      await CategoryRepository.getCategories(null, trip?.userId);
 
     const category = categories.find(
       (c) => c.id === expense.categoryId
@@ -104,11 +106,11 @@ function ExpenseHistory() {
         <ArrowLeft size={20} />
       </button>
 
-      <h1>Expense History</h1>
+      <h1>{t("expenseHistory")}</h1>
 
       {expenses.length === 0 ? (
         <div className="empty-card">
-          No expenses found.
+          {t("noExpensesFound")}
         </div>
       ) : (
         expenses.map((expense) => (
@@ -128,7 +130,7 @@ function ExpenseHistory() {
                         (item) => item.name
                       )
                       .join(", ")
-                  : "Expense"}
+                  : t("expense")}
               </h3>
 
               <p>{expense.notes}</p>
@@ -137,7 +139,7 @@ function ExpenseHistory() {
                 {expense.paymentSource ===
                 "fund"
                   ? "💰 Trip Fund"
-                  : `👤 ${expense.paidByName || "Participant"}`}
+                  : `👤 ${expense.paidByName || t("participant")}`}
               </small>
 
               <br />
@@ -164,7 +166,7 @@ function ExpenseHistory() {
         onClose={() =>
           setShowEditSheet(false)
         }
-        title="Edit Expense"
+        title={t("editExpense")}
       >
         {trip &&
           selectedExpense &&

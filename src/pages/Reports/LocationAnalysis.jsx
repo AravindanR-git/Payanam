@@ -5,12 +5,15 @@ import {
   Marker,
   TileLayer,
   useMap,
+  Polyline,
 } from "react-leaflet";
 import { divIcon } from "leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "./LocationAnalysis.css";
 import InsightsNav from "../../components/Insights/InsightsNav";
 import ExpenseRepository from "../../database/repositories/ExpenseRepository";
+import useLanguage from "../../i18n/useLanguage";
 
 const INDIA_CENTER = [20.5937, 78.9629];
 
@@ -53,28 +56,74 @@ function createAmountIcon(amount) {
   });
 }
 
+function RouteLine({ expenses }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const validExpenses = expenses
+      .filter(
+        (expense) =>
+          expense.latitude !== null &&
+          expense.longitude !== null &&
+          Number.isFinite(Number(expense.latitude)) &&
+          Number.isFinite(Number(expense.longitude))
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.expenseTime || a.createdAt) -
+          new Date(b.expenseTime || b.createdAt)
+      );
+
+    if (validExpenses.length < 2) {
+      return;
+    }
+
+    const latLngs = validExpenses.map((expense) => [
+      Number(expense.latitude),
+      Number(expense.longitude),
+    ]);
+
+    const polyline = L.polyline(latLngs, {
+      color: "#0A84FF",
+      weight: 4,
+      opacity: 0.8,
+      dashArray: "8, 8",
+    }).addTo(map);
+
+    return () => {
+      map.removeLayer(polyline);
+    };
+  }, [expenses, map]);
+
+  return null;
+}
+
 export default function LocationAnalysis() {
   const { tripId } = useParams();
+  const { t } = useLanguage();
 
   const [locations, setLocations] = useState([]);
   const [mapLocations, setMapLocations] = useState([]);
   const [selectedMapLocation, setSelectedMapLocation] =
     useState(null);
+  const [expenses, setExpenses] = useState([]);
 
   useEffect(() => {
     loadLocations();
   }, []);
 
   async function loadLocations() {
-    const expenses =
+    const expenseList =
       await ExpenseRepository.getExpensesByTrip(tripId);
+
+    setExpenses(expenseList);
 
     const map = {};
     const coordinateMap = new Map();
 
-    expenses.forEach((expense) => {
+    expenseList.forEach((expense) => {
       const location =
-        expense.locationName?.trim() || "Unknown";
+        expense.locationName?.trim() || t("unknown");
 
       if (!map[location]) {
         map[location] = {
@@ -147,15 +196,15 @@ export default function LocationAnalysis() {
   return (
     <div className="location-page">
         <InsightsNav />
-      <h2>Location Insights</h2>
+      <h2>{t("locationInsights")}</h2>
 
       <div className="location-map-card">
         <div className="location-map-header">
           <div>
-            <h3>Expense Map</h3>
-            <p>Tap a marker to view its expenses.</p>
+            <h3>{t("expenseMap")}</h3>
+            <p>{t("tapMarkerToView")}</p>
           </div>
-          <span>{mapLocations.length} GPS locations</span>
+          <span>{mapLocations.length} {t("gpsLocations")}</span>
         </div>
 
         <MapContainer
@@ -171,6 +220,8 @@ export default function LocationAnalysis() {
 
           <MapBounds locations={mapLocations} />
 
+          <RouteLine expenses={expenses} />
+
           {mapLocations.map((location) => (
             <Marker
               key={location.id}
@@ -185,8 +236,7 @@ export default function LocationAnalysis() {
 
         {mapLocations.length === 0 && (
           <p className="location-map-empty">
-            No saved GPS locations yet. Manual and unknown locations
-            remain available in the list below.
+            {t("noGpsLocations")}
           </p>
         )}
       </div>
@@ -195,7 +245,7 @@ export default function LocationAnalysis() {
         <div className="location-expense-summary">
           <div className="location-summary-heading">
             <div>
-              <span>Selected location</span>
+              <span>{t("selectedLocation")}</span>
               <h3>{selectedMapLocation.location}</h3>
             </div>
             <strong>
@@ -204,8 +254,7 @@ export default function LocationAnalysis() {
           </div>
 
           <p>
-            {selectedMapLocation.count} expense
-            {selectedMapLocation.count !== 1 ? "s" : ""}
+            {selectedMapLocation.count} {selectedMapLocation.count === 1 ? t("expenseCount") : t("expensesCount")}
           </p>
 
           <div className="location-expense-items">
@@ -216,7 +265,7 @@ export default function LocationAnalysis() {
                     ? expense.selectedItems
                         .map((item) => item.name)
                         .join(", ")
-                    : "Expense"}
+                    : t("expense")}
                 </span>
                 <strong>
                   ₹{Number(expense.amount || 0).toLocaleString("en-IN")}
@@ -229,10 +278,10 @@ export default function LocationAnalysis() {
 
       <div className="summary-card">
         <h3>{locations.length}</h3>
-        <p>Locations Visited</p>
+        <p>{t("locationsVisited")}</p>
 
         <h4>₹{totalSpent.toLocaleString("en-IN")}</h4>
-        <span>Total Spending</span>
+        <span>{t("totalSpending")}</span>
       </div>
 
       <div className="location-list">
@@ -247,8 +296,7 @@ export default function LocationAnalysis() {
                 <h4>{item.location}</h4>
 
                 <small>
-                  {item.count} expense
-                  {item.count > 1 ? "s" : ""}
+                  {item.count} {item.count > 1 ? t("expensesCount") : t("expenseCount")}
                 </small>
               </div>
             </div>

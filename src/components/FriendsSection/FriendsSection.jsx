@@ -7,12 +7,14 @@ import Input from "../Input/Input";
 import Card from "../Card/Card";
 
 import "./FriendsSection.css";
+import useLanguage from "../../i18n/useLanguage";
 
 function FriendsSection({
   members,
   setMembers,
   defaultContributionPerPerson,
 }) {
+  const { t } = useLanguage();
   const emptyForm = {
     name: "",
     contribution: defaultContributionPerPerson,
@@ -41,7 +43,7 @@ function FriendsSection({
 
   const saveMember = () => {
     if (!form.name.trim()) {
-      alert("Please enter member name.");
+      alert(t("enterMemberName"));
       return;
     }
 
@@ -65,7 +67,7 @@ function FriendsSection({
   };
 
   const deleteMember = (id) => {
-    if (!window.confirm("Delete this member?")) return;
+    if (!window.confirm(t("deleteMember"))) return;
 
     setMembers((prev) =>
       prev.filter((item) => item.id !== id)
@@ -77,8 +79,8 @@ function FriendsSection({
       <div className="friends-header">
 
         <div>
-          <h2>Members</h2>
-          <p>{members.length} Member(s)</p>
+          <h2>{t("members")}</h2>
+          <p>{members.length} {t("memberCount")}</p>
         </div>
 
         <Button
@@ -86,7 +88,7 @@ function FriendsSection({
           onClick={openAdd}
         >
           <Plus size={16} />
-          &nbsp; Add
+          &nbsp; {t("addMember")}
         </Button>
 
       </div>
@@ -98,11 +100,10 @@ function FriendsSection({
 
             <User size={42} />
 
-            <h3>No Members Added</h3>
+            <h3>{t("noMembersAdded")}</h3>
 
             <p>
-              Tap <strong>Add</strong> to include your
-              first traveller.
+              {t("tapAddToIncludeFirstTraveller")}
             </p>
 
           </div>
@@ -173,15 +174,15 @@ function FriendsSection({
         }
         title={
           editingId
-            ? "Edit Member"
-            : "Add Member"
+            ? t("editMember")
+            : t("addMember")
         }
       >
 
         <Input
-          label="Member Name"
+          label={t("memberName")}
           value={form.name}
-          placeholder="Enter member name"
+          placeholder={t("enterMemberName")}
           onChange={(e) =>
             setForm({
               ...form,
@@ -191,7 +192,7 @@ function FriendsSection({
         />
 
         <Input
-          label="Contribution"
+          label={t("contribution")}
           type="number"
           value={form.contribution}
           onChange={(e) =>
@@ -209,8 +210,8 @@ function FriendsSection({
           onClick={saveMember}
         >
           {editingId
-            ? "Update Member"
-            : "Save Member"}
+            ? t("updateMember")
+            : t("saveMember")}
         </Button>
 
       </BottomSheet>

@@ -1,0 +1,6 @@
+warning: in the working copy of 'server/data/sync_log.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'server/data/trips.json', LF will be replaced by CRLF the next time Git touches it
+ package.json              |  4 [32m+++[m[31m-[m
+ server/data/sync_log.json | 11 [32m+++++++++++[m
+ server/data/trips.json    |  7 [32m+++++++[m
+ 3 files changed, 21 insertions(+), 1 deletion(-)

@@ -9,6 +9,7 @@ import {
   Plus,
   Users,
   FileText,
+  Home,
 } from "lucide-react";
 
 import Button from "../../components/Button/Button";
@@ -17,9 +18,11 @@ import TripRepository from "../../database/repositories/TripRepository";
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
 import ExpenseRepository from "../../database/repositories/ExpenseRepository";
 import AddExpenseSheet from "../../components/AddExpenseSheet/AddExpenseSheet";
+import useLanguage from "../../i18n/useLanguage";
 
 function Journey() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [trip, setTrip] = useState(null);
 
@@ -38,10 +41,18 @@ function Journey() {
     useState(null);
   const [isEndingJourney, setIsEndingJourney] =
     useState(false);
+  const [isLoadingJourney, setIsLoadingJourney] =
+    useState(true);
 
   useEffect(() => {
     loadJourney();
   }, []);
+
+  useEffect(() => {
+    if (trip && !showExpenseSheet && !editingExpense) {
+      setShowExpenseSheet(true);
+    }
+  }, [trip]);
 
   const loadJourney = async () => {
     try {
@@ -74,10 +85,12 @@ function Journey() {
       );
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoadingJourney(false);
     }
   };
 
-  if (!trip) {
+  if (!trip || isLoadingJourney) {
     return (
       <div className="journey">
         <h2>Loading Journey...</h2>
@@ -107,7 +120,7 @@ function Journey() {
 
   const endJourney = async () => {
     const confirmed = window.confirm(
-      "End this journey? You can continue it for the next 24 hours if a late expense needs to be added."
+      t("endJourney")
     );
 
     if (!confirmed) return;
@@ -119,7 +132,7 @@ function Journey() {
       navigate("/history");
     } catch (error) {
       console.error(error);
-      alert("Unable to end the journey. Please try again.");
+      alert(t("unableToEndJourney"));
     } finally {
       setIsEndingJourney(false);
     }
@@ -137,28 +150,49 @@ function Journey() {
 
   return (
     <div className="journey">
-      <button
-        className="back-btn"
-        onClick={() => navigate("/")}
-      >
-        <ArrowLeft size={20} />
-      </button>
+      <div className="journey-header">
+        <button
+          className="back-btn"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft size={20} />
+        </button>
+
+        <button
+          className="home-btn"
+          onClick={() => navigate("/", { state: { skipHomeRedirect: true } })}
+          title="Home Dashboard"
+        >
+          <Home size={20} />
+        </button>
+      </div>
 
       <h1>{trip.tripName}</h1>
 
       <p>
         {trip.tripType === "friends"
-          ? "Friends Journey"
+          ? t("friendsJourney")
           : trip.tripType === "temple"
-            ? "Temple Journey"
-            : "Family Journey"}
+            ? t("templeJourney")
+            : t("familyJourney")}
       </p>
+
+      <button
+        className="add-expense-primary"
+        onClick={() => {
+          setEditingExpense(null);
+          setShowExpenseSheet(true);
+        }}
+      >
+        <Plus size={24} />
+        {t("addExpense")}
+      </button>
 
       <div className="balance-card">
         <div className="balance-item">
           <Wallet size={22} />
 
-          <span>Collected</span>
+          <span>{t("collected")}</span>
 
           <h2>
             ₹
@@ -173,7 +207,7 @@ function Journey() {
         <div className="balance-item">
           <Receipt size={22} />
 
-          <span>Spent</span>
+          <span>{t("spent")}</span>
 
           <h2>
             ₹
@@ -188,7 +222,7 @@ function Journey() {
         <div className="balance-item">
           <Landmark size={22} />
 
-          <span>Balance</span>
+          <span>{t("balance")}</span>
 
           <h2>
             ₹
@@ -199,42 +233,9 @@ function Journey() {
         </div>
       </div>
 
-      <h3>Journey Details</h3>
-
-      <div className="expense-card">
-        <div>
-          <h4>Participants</h4>
-
-          <span>
-            {participants.length} Group
-            {participants.length !== 1
-              ? "s"
-              : ""}
-            {" • "}
-            {totalPeople} People
-          </span>
-        </div>
-
-        <strong>👥</strong>
-      </div>
-
-      <h3>Quick Actions</h3>
+      <h3>{t("quickActions")}</h3>
 
       <div className="quick-grid">
-        <div
-          className="quick-card"
-          onClick={() => {
-
-            setEditingExpense(null);
-
-            setShowExpenseSheet(true);
-
-          }}
-        >
-          <Plus size={28} />
-          <span>Add Expense</span>
-        </div>
-
         <div
           className="quick-card"
           onClick={() =>
@@ -242,7 +243,7 @@ function Journey() {
           }
         >
           <Users size={28} />
-          <span>Participants</span>
+          <span>{t("participants")}</span>
         </div>
 
         <div
@@ -252,16 +253,16 @@ function Journey() {
           }
         >
           <FileText size={28} />
-          <span>Journey Insights</span>
+          <span>{t("journeyInsights")}</span>
         </div>
       </div>
 
       <div className="recent">
-        <h3>Recent Expenses</h3>
+        <h3>{t("recentExpenses")}</h3>
 
         {recentExpenses.length === 0 ? (
           <div className="expense-card">
-            <p>No expenses added yet.</p>
+            <p>{t("noExpensesYet")}</p>
           </div>
         ) : (
           recentExpenses.map((expense) => (

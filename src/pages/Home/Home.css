@@ -30,6 +30,34 @@
 
 }
 
+.home-logout-btn{
+
+    position:absolute;
+
+    top:24px;
+
+    right:24px;
+
+    background:none;
+
+    border:none;
+
+    color:#6E6E73;
+
+    cursor:pointer;
+
+    padding:8px;
+
+    border-radius:8px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
 .hero-card{
 
     text-align:center;

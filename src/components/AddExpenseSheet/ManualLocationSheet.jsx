@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Button from "../Button/Button";
 import LocationService from "../../services/LocationService";
 import "./ManualLocationSheet.css";
+import useLanguage from "../../i18n/useLanguage";
 
 function ManualLocationSheet({
   initialLocationName = "",
@@ -9,6 +10,7 @@ function ManualLocationSheet({
   onSave,
   onCancel,
 }) {
+  const { t } = useLanguage();
   const [locationName, setLocationName] =
     useState(initialLocationName);
   const [searchResults, setSearchResults] = useState([]);
@@ -16,18 +18,17 @@ function ManualLocationSheet({
     useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [hasEditedLocation, setHasEditedLocation] =
-    useState(false);
 
   useEffect(() => {
     const query = locationName.trim();
 
     if (
-      !hasEditedLocation ||
       selectedCoordinates ||
       query.length < 3 ||
       !navigator.onLine
     ) {
+      setSearchResults([]);
+      setSearchError("");
       return;
     }
 
@@ -45,14 +46,14 @@ function ManualLocationSheet({
         setSearchResults(results);
 
         if (results.length === 0) {
-          setSearchError("No matching locations found.");
+          setSearchError(t("noMatchingLocationsFound"));
         }
       } catch {
         if (!isCurrent) return;
 
         setSearchResults([]);
         setSearchError(
-          "Location suggestions are unavailable. You can still save manually."
+          t("locationSuggestionsUnavailable")
         );
       } finally {
         if (isCurrent) {
@@ -65,7 +66,7 @@ function ManualLocationSheet({
       isCurrent = false;
       clearTimeout(timer);
     };
-  }, [hasEditedLocation, locationName, selectedCoordinates]);
+  }, [locationName, selectedCoordinates]);
 
   const selectLocation = (result) => {
     setLocationName(result.locationName);
@@ -73,7 +74,6 @@ function ManualLocationSheet({
       latitude: result.latitude,
       longitude: result.longitude,
     });
-    setHasEditedLocation(false);
     setSearchResults([]);
     setSearchError("");
   };
@@ -82,7 +82,7 @@ function ManualLocationSheet({
     const value = locationName.trim();
 
     if (!value) {
-      alert("Enter a location.");
+      alert(t("enterLocation"));
       return;
     }
 
@@ -102,27 +102,26 @@ function ManualLocationSheet({
 
   return (
     <div className="bottom-sheet-content">
-      <h3>Manual Location</h3>
+      <h3>{t("manualLocation")}</h3>
 
       <div className="manual-location-search">
         <input
           className="sheet-input"
-          placeholder="Eg. Tirupati Bus Stand"
+          placeholder={t("locationPlaceholder")}
           value={locationName}
           onChange={(e) => {
             setLocationName(e.target.value);
             setSelectedCoordinates(null);
             setSearchResults([]);
             setSearchError("");
-            setHasEditedLocation(true);
           }}
         />
       </div>
 
       <p className="manual-location-helper">
         {isSearching
-          ? "Finding matching locations..."
-          : "Suggestions appear when online. You can still save manually while offline."}
+          ? t("findingMatchingLocations")
+          : t("suggestionsAppearWhenOnline")}
       </p>
 
       {searchError && (
@@ -156,11 +155,11 @@ function ManualLocationSheet({
           variant="secondary"
           onClick={onCancel}
         >
-          Cancel
+          {t("cancel")}
         </Button>
 
         <Button onClick={save}>
-          Save
+          {t("save")}
         </Button>
       </div>
     </div>

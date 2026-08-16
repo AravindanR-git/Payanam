@@ -23,9 +23,18 @@ import Timeline from "./pages/Reports/Timeline";
 import AIInsights from "./pages/Reports/AIInsights";
 import History from "./pages/Reports/History";
 import TripHistory from "./pages/TripHistory/TripHistory";
+import Login from "./pages/Login/Login";
+import Signup from "./pages/Signup/Signup";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
+import EmailCallback from "./pages/EmailCallback/EmailCallback";
+import Profile from "./pages/Profile/Profile";
+
+import RequireAuth from "./components/RequireAuth";
 
 import { seedDatabase } from "./database/seed/seedDatabase";
 import ExpenseRepository from "./database/repositories/ExpenseRepository";
+import SyncService from "./services/syncService";
 
 function App() {
 
@@ -33,6 +42,20 @@ function App() {
 
     seedDatabase();
 
+  }, []);
+
+  useEffect(() => {
+    let cleanup;
+
+    const startSync = async () => {
+      cleanup = await SyncService.startAutoSync();
+    };
+
+    startSync();
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
   useEffect(() => {
@@ -58,106 +81,120 @@ function App() {
 
       <div className="app-content">
 
-        <BrowserRouter>
+          <BrowserRouter>
 
-          <Routes>
+            <Routes>
 
-            <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
 
-            <Route
-              path="/create-trip"
-              element={<CreateTrip />}
-            />
+              <Route path="/signup" element={<Signup />} />
 
-            <Route
-              path="/journey-setup"
-              element={<JourneySetup />}
-            />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            <Route
-              path="/thiru-payanam"
-              element={<ThiruPayanam />}
-            />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
-            <Route
-              path="/journey"
-              element={<Journey />}
-            />
+              <Route path="/email-callback" element={<EmailCallback />} />
 
-            <Route
-              path="/expense-history"
-              element={<ExpenseHistory />}
+              <Route path="/" element={<RequireAuth><Home /></RequireAuth>} />
 
-            />
-            <Route path="/history" element={<TripHistory />} />
-            <Route
-              path="/reports/:tripId/overview"
-              element={<Overview />}
-            />
+              <Route
+                path="/create-trip"
+                element={<RequireAuth><CreateTrip /></RequireAuth>}
+              />
 
-            <Route
-              path="/reports/:tripId/categories"
-              element={<CategoryAnalysis />}
-            />
+              <Route
+                path="/journey-setup"
+                element={<RequireAuth><JourneySetup /></RequireAuth>}
+              />
 
-            <Route
-              path="/reports/:tripId/daywise"
-              element={<DayWiseAnalysis />}
-            />
+              <Route
+                path="/thiru-payanam"
+                element={<RequireAuth><ThiruPayanam /></RequireAuth>}
+              />
 
-            <Route
-              path="/reports/:tripId/location"
-              element={<LocationAnalysis />}
-            />
+              <Route
+                path="/journey"
+                element={<RequireAuth><Journey /></RequireAuth>}
+              />
 
-            <Route
-              path="/reports/:tripId/members"
-              element={<MemberInsights />}
-            />
+              <Route
+                path="/expense-history"
+                element={<RequireAuth><ExpenseHistory /></RequireAuth>}
+              />
+              <Route path="/history" element={<RequireAuth><TripHistory /></RequireAuth>} />
+              <Route
+                path="/reports/:tripId/overview"
+                element={<RequireAuth><Overview /></RequireAuth>}
+              />
 
-            <Route
-              path="/reports/:tripId/timeline"
-              element={<Timeline />}
-            />
+              <Route
+                path="/reports/:tripId/categories"
+                element={<RequireAuth><CategoryAnalysis /></RequireAuth>}
+              />
 
-            <Route
-              path="/reports/:tripId/ai"
-              element={<AIInsights />}
-            />
+              <Route
+                path="/reports/:tripId/daywise"
+                element={<RequireAuth><DayWiseAnalysis /></RequireAuth>}
+              />
 
-            <Route
-              path="/reports/:tripId/history"
-              element={<History />}
-            />
+              <Route
+                path="/reports/:tripId/location"
+                element={<RequireAuth><LocationAnalysis /></RequireAuth>}
+              />
 
-            <Route
-              path="/participants"
-              element={<Participants />}
-            />
+              <Route
+                path="/reports/:tripId/members"
+                element={<RequireAuth><MemberInsights /></RequireAuth>}
+              />
 
-            <Route
-              path="/settings"
-              element={<Settings />}
-            />
+              <Route
+                path="/reports/:tripId/timeline"
+                element={<RequireAuth><Timeline /></RequireAuth>}
+              />
 
-            <Route
-              path="/categories"
-              element={<Categories />}
-            />
+              <Route
+                path="/reports/:tripId/ai"
+                element={<RequireAuth><AIInsights /></RequireAuth>}
+              />
 
-            <Route
-              path="/items"
-              element={<Items />}
-            />
+              <Route
+                path="/reports/:tripId/history"
+                element={<RequireAuth><History /></RequireAuth>}
+              />
 
-            <Route
-              path="/places"
-              element={<Places />}
-            />
+              <Route
+                path="/participants"
+                element={<RequireAuth><Participants /></RequireAuth>}
+              />
 
-          </Routes>
+              <Route
+                path="/settings"
+                element={<RequireAuth><Settings /></RequireAuth>}
+              />
 
-        </BrowserRouter>
+              <Route
+                path="/profile"
+                element={<RequireAuth><Profile /></RequireAuth>}
+              />
+
+              <Route
+                path="/categories"
+                element={<RequireAuth><Categories /></RequireAuth>}
+              />
+
+              <Route
+                path="/items"
+                element={<RequireAuth><Items /></RequireAuth>}
+              />
+
+              <Route
+                path="/places"
+                element={<RequireAuth><Places /></RequireAuth>}
+              />
+
+            </Routes>
+
+          </BrowserRouter>
 
       </div>
 

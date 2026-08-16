@@ -15,9 +15,13 @@ import FamilySection from "../../components/FamilySection/FamilySection";
 
 import TripRepository from "../../database/repositories/TripRepository";
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
+import useLanguage from "../../i18n/useLanguage";
+import { useAuth } from "../../contexts/useAuth";
 
 function JourneySetup() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const { user } = useAuth();
 
   const [tripName, setTripName] = useState("");
 
@@ -53,23 +57,23 @@ function JourneySetup() {
 
   const createJourney = async () => {
     if (!tripName.trim()) {
-      alert("Please enter a journey name.");
+      alert(t("enterJourneyName"));
       return;
     }
 
     if (tripGroup === "friends" && friends.length === 0) {
-      alert("Please add at least one member.");
+      alert(t("addAtLeastOneMember"));
       return;
     }
 
     if (tripGroup === "family" && families.length === 0) {
-      alert("Please add at least one family.");
+      alert(t("addAtLeastOneFamily"));
       return;
     }
 
     try {
       const trip = await TripRepository.createTrip({
-        userId: "demo-user",
+        userId: user?.id,
         tripName,
         tripType: tripGroup,
         defaultContributionPerPerson,
@@ -102,7 +106,7 @@ function JourneySetup() {
       navigate("/journey");
     } catch (err) {
       console.error(err);
-      alert("Unable to create journey.");
+      alert(t("unableToCreateJourney"));
     }
   };
 
@@ -117,23 +121,23 @@ function JourneySetup() {
       </button>
 
       <PageHeader
-        title="Create Journey"
-        subtitle="Set up your new trip"
+        title={t("createJourney")}
+        subtitle={t("setUpYourNewTrip")}
       />
 
       <div className="journey-card">
 
         <Input
-          label="Journey Name"
+          label={t("journeyName")}
           value={tripName}
-          placeholder="Ooty Friends Trip"
+          placeholder={t("journeyNamePlaceholder")}
           onChange={(e) =>
             setTripName(e.target.value)
           }
         />
 
         <Input
-          label="Contribution Per Person"
+          label={t("contributionPerPerson")}
           type="number"
           value={defaultContributionPerPerson}
           onChange={(e) =>
@@ -146,15 +150,15 @@ function JourneySetup() {
         <div className="segment-block">
 
           <label className="segment-label">
-            Journey Type
+            {t("journeyType")}
           </label>
 
           <SegmentedControl
-            options={["Friends", "Family"]}
+            options={[t("friends"), t("family")]}
             value={
               tripGroup === "friends"
-                ? "Friends"
-                : "Family"
+                ? t("friends")
+                : t("family")
             }
             onChange={(value) =>
               setTripGroup(value.toLowerCase())
@@ -198,7 +202,7 @@ function JourneySetup() {
           fullWidth
           onClick={createJourney}
         >
-          Create Journey
+          {t("createJourney")}
         </Button>
 
       </div>

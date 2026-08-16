@@ -1,7 +1,9 @@
 import { ulid } from "ulid";
 import db from "../db";
 import ItemRepository from "./ItemRepository";
+import CategoryRepository from "./CategoryRepository";
 import LocationService from "../../services/LocationService";
+import { enqueueSync } from "../../services/syncEnqueue";
 
 const ExpenseRepository = {
   async createExpense(data) {
@@ -30,6 +32,12 @@ const ExpenseRepository = {
         (item) => item.id
       )
     );
+
+    if (expense.categoryId) {
+      await CategoryRepository.markUsed(expense.categoryId);
+    }
+
+    enqueueSync("expenses", expense.id, "CREATE", expense);
 
     return expense;
   },
@@ -90,11 +98,15 @@ const ExpenseRepository = {
       syncStatus: "PENDING",
     });
 
+    enqueueSync("expenses", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
+
     return await db.expenses.get(id);
   },
 
   async deleteExpense(id) {
     await db.expenses.delete(id);
+
+    enqueueSync("expenses", id, "DELETE", { id });
   },
 
   async resolveMissingManualLocations(limit = 10) {

@@ -1,5 +1,6 @@
 import { ulid } from "ulid";
 import db from "../db";
+import { enqueueSync } from "../../services/syncEnqueue";
 
 const ContributionRepository = {
 
@@ -12,6 +13,8 @@ const ContributionRepository = {
     };
 
     await db.contributions.add(contribution);
+
+    enqueueSync("contributions", contribution.id, "CREATE", contribution);
 
     return contribution;
   },

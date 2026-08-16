@@ -7,6 +7,7 @@ import CategoryRepository from "../../database/repositories/CategoryRepository";
 import { CATEGORY_ICONS } from "../../constants/iconRegistry";
 
 import "./AddCategorySheet.css";
+import useLanguage from "../../i18n/useLanguage";
 
 function AddCategorySheet({
   isOpen,
@@ -15,6 +16,7 @@ function AddCategorySheet({
   trip = null,
   onSaved,
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
   const [search, setSearch] = useState("");
@@ -47,7 +49,7 @@ function AddCategorySheet({
 
   const saveCategory = async () => {
     if (!name.trim()) {
-      alert("Enter category name");
+      alert(t("enterCategoryName"));
       return;
     }
 
@@ -81,13 +83,13 @@ function AddCategorySheet({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={category ? "Edit Category" : "Add Category"}
+      title={category ? t("editCategory") : t("addCategory")}
     >
       <div className="category-sheet">
 
         <input
           className="sheet-input"
-          placeholder="Category Name"
+          placeholder={t("categoryName")}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -103,7 +105,7 @@ function AddCategorySheet({
 
           {filteredIcons.length === 0 ? (
             <div className="no-icons">
-              No icons found
+              {t("noIconsFound")}
             </div>
           ) : (
             <div className="icon-grid">
@@ -135,8 +137,8 @@ function AddCategorySheet({
 
         <Button onClick={saveCategory}>
           {category
-            ? "Update Category"
-            : "Save Category"}
+            ? t("updateCategory")
+            : t("saveCategory")}
         </Button>
 
       </div>

@@ -3,6 +3,7 @@ import "./CategoryStep.css";
 import { useMemo, useState } from "react";
 
 import IconAvatar from "../../components/IconAvatar/IconAvatar";
+import useLanguage from "../../i18n/useLanguage";
 
 function CategoryStep({
   categories,
@@ -10,6 +11,7 @@ function CategoryStep({
   onBack,
   onAddCategory,
 }) {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
 
   const filteredCategories = useMemo(() => {
@@ -36,21 +38,21 @@ function CategoryStep({
           onBack();
         }}
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <h2 className="step-title">
-        Select Category
+        {t("selectCategory")}
       </h2>
 
       <p className="step-subtitle">
-        Choose where this expense belongs
+        {t("chooseWhereExpenseBelongs")}
       </p>
 
       <input
         className="category-search"
         type="text"
-        placeholder="Search category..."
+        placeholder={t("searchCategories")}
         value={search}
         onChange={(e) =>
           setSearch(e.target.value)
@@ -59,7 +61,7 @@ function CategoryStep({
 
       {filteredCategories.length === 0 ? (
         <div className="empty-state">
-          No categories found.
+          {t("noCategoriesFound")}
         </div>
       ) : (
         <div className="category-list">
@@ -129,7 +131,7 @@ function CategoryStep({
               <div className="category-info">
 
                 <span className="category-name">
-                  Create New Category
+                  {t("createNewCategory")}
                 </span>
 
               </div>

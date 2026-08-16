@@ -1,5 +1,6 @@
 import Card from "../Card/Card";
 import "./JourneySummaryCard.css";
+import useLanguage from "../../i18n/useLanguage";
 
 function JourneySummaryCard({
   tripGroup,
@@ -9,37 +10,39 @@ function JourneySummaryCard({
   totalChildren,
   totalCollected,
 }) {
+  const { t } = useLanguage();
+
   return (
     <Card>
 
       <div className="summary-header">
-        <h3>Journey Summary</h3>
+        <h3>{t("journeySummary")}</h3>
       </div>
 
       {tripGroup === "friends" ? (
         <div className="summary-row">
-          <span>Participants</span>
+          <span>{t("participants")}</span>
           <strong>{friends.length}</strong>
         </div>
       ) : (
         <>
           <div className="summary-row">
-            <span>Families</span>
+            <span>{t("families")}</span>
             <strong>{families.length}</strong>
           </div>
 
           <div className="summary-row">
-            <span>Adults</span>
+            <span>{t("adults")}</span>
             <strong>{totalAdults}</strong>
           </div>
 
           <div className="summary-row">
-            <span>Children</span>
+            <span>{t("children")}</span>
             <strong>{totalChildren}</strong>
           </div>
 
           <div className="summary-row">
-            <span>Total People</span>
+            <span>{t("totalHeadcount")}</span>
             <strong>{totalAdults + totalChildren}</strong>
           </div>
         </>

@@ -14,10 +14,11 @@ import {
 import PlaceRepository from "../../database/repositories/PlaceRepository";
 
 import AddPlaceSheet from "../../components/AddPlaceSheet/AddPlaceSheet";
+import useLanguage from "../../i18n/useLanguage";
 
 function Places() {
-
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [places, setPlaces] = useState([]);
 
@@ -61,9 +62,7 @@ function Places() {
   const deletePlace = async (place) => {
 
     const ok = window.confirm(
-
-      `Delete "${place.name}"?`
-
+      t("deletePlaceConfirm", { name: place.name })
     );
 
     if (!ok) return;
@@ -95,15 +94,11 @@ function Places() {
       <div className="items-header">
 
         <h1>
-
-          📍 Places
-
+          {t("places")}
         </h1>
 
         <p>
-
-          Manage your saved places.
-
+          {t("managePlaces")}
         </p>
 
       </div>
@@ -117,15 +112,11 @@ function Places() {
           <MapPin size={48}/>
 
           <h3>
-
-            No Places
-
+            {t("noPlaces")}
           </h3>
 
           <p>
-
-            Add your frequently used places.
-
+            {t("addFirstPlace")}
           </p>
 
         </div>
@@ -157,9 +148,7 @@ function Places() {
                   <div className="item-text">
 
                     <span className="item-title">
-
                       {place.name}
-
                     </span>
 
                   </div>

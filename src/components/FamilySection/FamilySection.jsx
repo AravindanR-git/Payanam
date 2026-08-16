@@ -13,6 +13,7 @@ import Input from "../Input/Input";
 import Stepper from "../Stepper/Stepper";
 
 import "./FamilySection.css";
+import useLanguage from "../../i18n/useLanguage";
 
 function FamilySection({
   families,
@@ -24,6 +25,7 @@ function FamilySection({
   namePlaceholder = "Murugan Family",
   defaultAdults = 2,
 }) {
+  const { t } = useLanguage();
   const emptyForm = {
     familyName: "",
     adults: defaultAdults,
@@ -35,6 +37,11 @@ function FamilySection({
   const [showSheet, setShowSheet] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+
+  const totalPeople =
+    Number(form.adults || 0) + Number(form.children || 0);
+
+  const addLabel = totalPeople > 1 ? t("addGroup") : t("addMember");
 
   const openAdd = () => {
     setEditingId(null);
@@ -58,7 +65,7 @@ function FamilySection({
 
   const saveFamily = () => {
     if (!form.familyName.trim()) {
-      alert(`Please enter ${nameLabel.toLowerCase()}.`);
+      alert(t("enterFamilyName"));
       return;
     }
 
@@ -82,7 +89,7 @@ function FamilySection({
   };
 
   const deleteFamily = (id) => {
-    if (!window.confirm("Delete this family?"))
+    if (!window.confirm(t("deleteFamily")))
       return;
 
     setFamilies((prev) =>
@@ -103,7 +110,7 @@ function FamilySection({
           onClick={openAdd}
         >
           <Plus size={16} />
-          &nbsp; Add
+          &nbsp; {addLabel}
         </Button>
       </div>
 
@@ -112,11 +119,10 @@ function FamilySection({
           <div className="family-empty">
             <Users size={42} />
 
-            <h3>No {groupLabelPlural} Added</h3>
+            <h3>{t("noGroupsAdded")}</h3>
 
             <p>
-              Tap <strong>Add</strong> to
-              include your first {groupLabel.toLowerCase()}.
+              {t("tapAddToIncludeFirst")}
             </p>
           </div>
         </Card>
@@ -195,8 +201,8 @@ function FamilySection({
         }
         title={
           editingId
-            ? `Edit ${groupLabel}`
-            : `Add ${groupLabel}`
+            ? t("editGroup")
+            : addLabel
         }
       >
         <Input
@@ -212,7 +218,7 @@ function FamilySection({
         />
 
         <Stepper
-          label="Adults"
+          label={t("adults")}
           value={form.adults}
           setValue={(value) =>
             setForm((prev) => ({
@@ -227,7 +233,7 @@ function FamilySection({
         />
 
         <Stepper
-          label="Children"
+          label={t("children")}
           value={form.children}
           setValue={(value) =>
             setForm((prev) => ({
@@ -242,7 +248,7 @@ function FamilySection({
         />
 
         <Input
-          label="Contribution"
+          label={t("contribution")}
           type="number"
           value={form.contribution}
           onChange={(e) =>
@@ -260,8 +266,10 @@ function FamilySection({
           onClick={saveFamily}
         >
           {editingId
-            ? "Update Family"
-            : "Save Family"}
+            ? t("updateGroup")
+            : totalPeople > 1
+              ? t("saveGroup")
+              : t("saveMember")}
         </Button>
       </BottomSheet>
     </>

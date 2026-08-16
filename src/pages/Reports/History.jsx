@@ -10,11 +10,13 @@ import db from "../../database/db";
 import "./History.css";
 import AddExpenseSheet from "../../components/AddExpenseSheet/AddExpenseSheet";
 import TripRepository from "../../database/repositories/TripRepository";
+import useLanguage from "../../i18n/useLanguage";
 
 
 export default function History() {
     const { tripId } = useParams();
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [searchParams] = useSearchParams();
 
     const [expenses, setExpenses] = useState([]);
@@ -39,7 +41,7 @@ export default function History() {
         if (!selectedExpense) return;
 
         const confirmed = window.confirm(
-            "Delete this expense?"
+            t("deleteExpenseConfirm")
         );
 
         if (!confirmed) return;
@@ -234,7 +236,13 @@ export default function History() {
         const categoryMap = new Map();
 
         categoryList.forEach(category =>
-            categoryMap.set(category.id, category.name)
+          categoryMap.set(category.id, category.name)
+        );
+
+        const categoryIconMap = new Map();
+
+        categoryList.forEach(category =>
+          categoryIconMap.set(category.id, category.icon)
         );
 
         const data = expenseList.map(expense => ({
@@ -242,9 +250,8 @@ export default function History() {
             categoryName:
                 categoryMap.get(expense.categoryId) || "Others",
             icon:
-                `/icons/categories/${(
-                    categoryMap.get(expense.categoryId) || "others"
-                ).toLowerCase()}.png`
+                categoryIconMap.get(expense.categoryId) ||
+                "/icons/categories/others.png"
         }));
         setExpenses(data);
         setFiltered(data);
@@ -269,11 +276,11 @@ export default function History() {
         yesterday.setDate(today.getDate() - 1);
 
         if (date.toDateString() === today.toDateString()) {
-            return "Today";
+            return t("today");
         }
 
         if (date.toDateString() === yesterday.toDateString()) {
-            return "Yesterday";
+            return t("yesterday");
         }
 
         return date.toLocaleDateString("en-IN", {
@@ -311,7 +318,7 @@ export default function History() {
             <InsightsNav />
 
             <h2 className="history-title">
-                Expense History
+                {t("expenseHistory")}
             </h2>
             <div className="history-search">
 
@@ -319,7 +326,7 @@ export default function History() {
 
                 <input
                     type="text"
-                    placeholder="Search expenses..."
+                    placeholder={t("searchPlaceholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -335,7 +342,7 @@ export default function History() {
                     }
                     onClick={() => setSelectedCategory("All")}
                 >
-                    All
+                    {t("allCategories")}
                 </button>
 
                 {categories.map(category => (
@@ -365,39 +372,39 @@ export default function History() {
                     className="sort-select"
                 >
 
-                    <optgroup label="Sort">
+                    <optgroup label={t("sort")}>
 
-                        <option value="Latest">Latest</option>
+                        <option value="Latest">{t("latest")}</option>
 
-                        <option value="Oldest">Oldest</option>
+                        <option value="Oldest">{t("oldest")}</option>
 
-                        <option value="Highest">Highest Amount</option>
+                        <option value="Highest">{t("highestAmount")}</option>
 
-                        <option value="Lowest">Lowest Amount</option>
-
-                    </optgroup>
-
-                    <optgroup label="Date">
-
-                        <option value="Today">Today</option>
-
-                        <option value="Yesterday">Yesterday</option>
-
-                        <option value="This Week">This Week</option>
-
-                        <option value="This Month">This Month</option>
+                        <option value="Lowest">{t("lowestAmount")}</option>
 
                     </optgroup>
 
-                    <optgroup label="Time">
+                    <optgroup label={t("date")}>
 
-                        <option value="Morning">Morning</option>
+                        <option value="Today">{t("today")}</option>
 
-                        <option value="Afternoon">Afternoon</option>
+                        <option value="Yesterday">{t("yesterday")}</option>
 
-                        <option value="Evening">Evening</option>
+                        <option value="This Week">{t("thisWeek")}</option>
 
-                        <option value="Night">Night</option>
+                        <option value="This Month">{t("thisMonth")}</option>
+
+                    </optgroup>
+
+                    <optgroup label={t("time")}>
+
+                        <option value="Morning">{t("morning")}</option>
+
+                        <option value="Afternoon">{t("afternoon")}</option>
+
+                        <option value="Evening">{t("evening")}</option>
+
+                        <option value="Night">{t("night")}</option>
 
                     </optgroup>
 
@@ -425,7 +432,7 @@ export default function History() {
                                     <h3>{getDisplayDate(date)}</h3>
 
                                     <span>
-                                        {date} • {expenses.length} Expenses
+                                        {date} • {expenses.length} {t("expensesCount")}
                                     </span>
 
                                 </div>
@@ -456,7 +463,7 @@ export default function History() {
                                                 ? expense.selectedItems
                                                     .map(i => i.name)
                                                     .join(", ")
-                                                : "Expense"}
+                                                : t("expense")}
                                         </h3>
 
                                         <span>
@@ -464,7 +471,7 @@ export default function History() {
                                         </span>
 
                                         <small>
-                                            📍 {expense.locationName || "Unknown"}
+                                            📍 {expense.locationName || t("unknownLocation")}
                                         </small>
 
                                     </div>
@@ -531,14 +538,14 @@ export default function History() {
 
                             }}
                         >
-                            ✏️ Edit Expense
+                            ✏️ {t("editExpense")}
                         </button>
 
                         <button
                             className="danger"
                             onClick={handleDeleteExpense}
                         >
-                            🗑 Delete
+                            🗑 {t("delete")}
                         </button>
 
                     </div>

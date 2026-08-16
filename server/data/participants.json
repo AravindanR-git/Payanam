@@ -1,0 +1,24 @@
+[
+  {
+    "id": "01KZV8ZV5FGNTMXDV947N4R7FC",
+    "name": "Hari",
+    "adults": null,
+    "children": null,
+    "memberCount": 1,
+    "type": "friend",
+    "initialContribution": 2500,
+    "updatedAt": "2026-08-14T09:19:51.197Z",
+    "createdAt": "2026-08-14T09:19:51.197Z"
+  },
+  {
+    "id": "01KZV8ZV5FGNTMXDV947N4R7FC",
+    "name": "Hari",
+    "adults": null,
+    "children": null,
+    "memberCount": 1,
+    "type": "friend",
+    "initialContribution": 2500,
+    "updatedAt": "2026-08-14T09:19:51.250Z",
+    "createdAt": "2026-08-14T09:19:51.250Z"
+  }
+]

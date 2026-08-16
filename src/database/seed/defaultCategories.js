@@ -7,6 +7,8 @@ const defaultCategories = [
     tripTypes: ["all"],
     displayOrder: 1,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 
   {
@@ -17,6 +19,8 @@ const defaultCategories = [
     tripTypes: ["all"],
     displayOrder: 2,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 
   {
@@ -27,6 +31,8 @@ const defaultCategories = [
     tripTypes: ["friends", "family"],
     displayOrder: 3,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 
   {
@@ -37,6 +43,8 @@ const defaultCategories = [
     tripTypes: ["all"],
     displayOrder: 4,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 
   {
@@ -47,6 +55,8 @@ const defaultCategories = [
     tripTypes: ["all"],
     displayOrder: 5,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 
   {
@@ -57,6 +67,8 @@ const defaultCategories = [
     tripTypes: ["temple"],
     displayOrder: 6,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 
   {
@@ -67,6 +79,8 @@ const defaultCategories = [
     tripTypes: ["temple"],
     displayOrder: 7,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 
   {
@@ -77,6 +91,8 @@ const defaultCategories = [
     tripTypes: ["friends", "family"],
     displayOrder: 8,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 
   {
@@ -87,6 +103,8 @@ const defaultCategories = [
     tripTypes: ["all"],
     displayOrder: 9,
     isDefault: true,
+    usageCount: 0,
+    lastUsed: null,
   },
 ];
 

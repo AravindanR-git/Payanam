@@ -4,19 +4,15 @@ import BottomSheet from "../BottomSheet/BottomSheet";
 import Button from "../Button/Button";
 
 import PlaceRepository from "../../database/repositories/PlaceRepository";
+import useLanguage from "../../i18n/useLanguage";
 
 function AddPlaceSheet({
-
   isOpen,
-
   onClose,
-
   place = null,
-
   onSaved,
-
 }) {
-
+  const { t } = useLanguage();
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -39,7 +35,7 @@ function AddPlaceSheet({
 
     if (!name.trim()) {
 
-      alert("Enter place name");
+      alert(t("enterPlaceName"));
 
       return;
 
@@ -91,9 +87,9 @@ function AddPlaceSheet({
 
         place
 
-          ? "Edit Place"
+          ? t("editPlace")
 
-          : "Add Place"
+          : t("addPlace")
 
       }
 
@@ -103,7 +99,7 @@ function AddPlaceSheet({
 
         className="sheet-input"
 
-        placeholder="Place Name"
+        placeholder={t("placeName")}
 
         value={name}
 
@@ -125,9 +121,9 @@ function AddPlaceSheet({
 
           place
 
-            ? "Update Place"
+            ? t("updatePlace")
 
-            : "Save Place"
+            : t("savePlace")
 
         }
 

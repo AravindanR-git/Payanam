@@ -13,10 +13,11 @@ import IconAvatar from "../../components/IconAvatar/IconAvatar";
 
 import ItemRepository from "../../database/repositories/ItemRepository";
 import AddItemSheet from "../../components/AddItemSheet/AddItemSheet";
+import useLanguage from "../../i18n/useLanguage";
 
 function Items() {
-
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const { state } = useLocation();
 
@@ -74,7 +75,7 @@ function Items() {
   const deleteItem = async (item) => {
 
     const ok = window.confirm(
-      `Delete "${item.name}" ?`
+      t("deleteItemConfirm", { name: item.name })
     );
 
     if (!ok) return;
@@ -115,17 +116,13 @@ function Items() {
           />
 
           <h1>
-
             {category.name}
-
           </h1>
 
         </div>
 
         <p>
-
-          Manage expense items
-
+          {t("manageExpenseItems")}
         </p>
 
       </div>
@@ -136,12 +133,10 @@ function Items() {
 
           <div className="empty-card">
 
-            <h3>No Items</h3>
+            <h3>{t("noItems")}</h3>
 
             <p>
-
-              Add your first expense item.
-
+              {t("addFirstItem")}
             </p>
 
           </div>
@@ -170,9 +165,7 @@ function Items() {
                     <div className="item-text">
 
                       <span className="item-title">
-
                         {item.name}
-
                       </span>
 
                     </div>
@@ -182,39 +175,21 @@ function Items() {
                   <div className="item-actions">
 
                     <button
-
                       className="item-action"
-
-                      onClick={(e) => {
-
-                        e.stopPropagation();
-
-                        editItem(item);
-
-                      }}
-
+                      onClick={() =>
+                        editItem(item)
+                      }
                     >
-
-                      <Pencil size={18} />
-
+                      <Pencil size={18}/>
                     </button>
 
                     <button
-
                       className="item-action delete"
-
-                      onClick={(e) => {
-
-                        e.stopPropagation();
-
-                        deleteItem(item);
-
-                      }}
-
+                      onClick={() =>
+                        deleteItem(item)
+                      }
                     >
-
-                      <Trash2 size={18} />
-
+                      <Trash2 size={18}/>
                     </button>
 
                   </div>
@@ -233,32 +208,18 @@ function Items() {
         className="floating-btn"
         onClick={addItem}
       >
-
-        <Plus size={26} />
-
+        <Plus size={26}/>
       </button>
 
       <AddItemSheet
-
         isOpen={showSheet}
-
         onClose={() => {
-
           setShowSheet(false);
-
           setSelectedItem(null);
-
         }}
-
-        category={category}
-
         item={selectedItem}
-
-        onSaved={async () => {
-          await loadItems();
-          setShowSheet(false);
-          setEditingItem(null);
-        }}
+        category={category}
+        onSaved={loadItems}
       />
 
     </div>

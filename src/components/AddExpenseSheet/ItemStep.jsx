@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./ItemStep.css";
 
 import IconAvatar from "../../components/IconAvatar/IconAvatar";
+import useLanguage from "../../i18n/useLanguage";
 
 function ItemStep({
   category,
@@ -11,6 +12,7 @@ function ItemStep({
   onContinue,
   onAddItem,
 }) {
+  const { t } = useLanguage();
   const [selected, setSelected] =
     useState(selectedItems);
 
@@ -70,7 +72,7 @@ function ItemStep({
           onBack();
         }}
       >
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className="item-header">
@@ -88,7 +90,7 @@ function ItemStep({
           </h2>
 
           <p className="step-subtitle">
-            Select one or more items
+            {t("selectOneOrMoreItems")}
           </p>
 
         </div>
@@ -98,7 +100,7 @@ function ItemStep({
       <input
         className="item-search"
         type="text"
-        placeholder="Search item..."
+        placeholder={t("searchItems")}
         value={search}
         onChange={(e) =>
           setSearch(e.target.value)
@@ -106,13 +108,13 @@ function ItemStep({
       />
 
       <div className="selected-count">
-        {selected.length} Selected
+        {selected.length} {t("selected")}
       </div>
 
       {filteredItems.length === 0 ? (
 
         <div className="empty-state">
-          No items found.
+          {t("noItemsFound")}
         </div>
 
       ) : (
@@ -193,7 +195,7 @@ function ItemStep({
               </div>
 
               <span className="item-name">
-                Create New Item
+                {t("createNewItem")}
               </span>
 
             </div>
@@ -213,7 +215,7 @@ function ItemStep({
           onContinue(selected)
         }
       >
-        Continue
+        {t("continue")}
       </button>
 
     </div>

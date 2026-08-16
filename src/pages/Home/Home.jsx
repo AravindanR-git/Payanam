@@ -1,7 +1,7 @@
 import "./Home.css";
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Clock3,
@@ -9,7 +9,7 @@ import {
   Play,
   Plus,
   Settings2,
-  User,
+  LogOut,
 } from "lucide-react";
 
 import Header from "../../components/Header/Header";
@@ -18,22 +18,53 @@ import Button from "../../components/Button/Button";
 import ListItem from "../../components/ListItem/ListItem";
 import TripRepository from "../../database/repositories/TripRepository";
 import useLanguage from "../../i18n/useLanguage";
+import { useAuth } from "../../contexts/useAuth";
+import safeLogout from "../../services/safeLogout";
+
+function getTimeBasedGreeting(t) {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return t("goodMorning") || "Good Morning";
+  if (hour >= 12 && hour < 17) return t("goodAfternoon") || "Good Afternoon";
+  if (hour >= 17 && hour < 21) return t("goodEvening") || "Good Evening";
+  return t("goodNight") || "Good Night";
+}
 
 function Home() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTrip, setActiveTrip] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
+  const { user, profile } = useAuth();
 
   useEffect(() => {
     const loadActiveTrip = async () => {
       const trip = await TripRepository.getActiveTrip();
       setActiveTrip(trip);
       setIsLoading(false);
+
+      const skipRedirect =
+        location.state?.skipHomeRedirect === true;
+
+      if (trip && !skipRedirect) {
+        navigate("/journey", { replace: true });
+      }
     };
 
     loadActiveTrip();
-  }, []);
+  }, [navigate, location.state?.skipHomeRedirect]);
+
+  const continueJourney = () => {
+    navigate("/journey");
+  };
+
+  const handleLogout = async () => {
+    await safeLogout();
+    navigate("/login", { replace: true });
+  };
+
+  const displayName = profile?.display_name || user?.email || "User";
+  const greeting = getTimeBasedGreeting(t);
 
   return (
     <motion.div
@@ -47,9 +78,13 @@ function Home() {
         <span>EN | தமிழ்</span>
       </div>
 
+      <button className="home-logout-btn" onClick={handleLogout}>
+        <LogOut size={18} />
+      </button>
+
       <Header
-        subtitle="Good Morning 👋"
-        title="Aravin"
+        subtitle={greeting}
+        title={displayName}
         description={
           activeTrip
             ? t("activeJourney")
@@ -78,7 +113,7 @@ function Home() {
 
             <div className="hero-button">
               {activeTrip ? (
-                <Button onClick={() => navigate("/journey")}>
+                <Button onClick={continueJourney}>
                   <Play size={18} />
                   {t("continueJourney")}
                 </Button>
@@ -100,12 +135,6 @@ function Home() {
           icon={<Clock3 size={20} />}
           title={t("previousTrips")}
           onClick={() => navigate("/history")}
-        />
-
-        <ListItem
-          icon={<User size={20} />}
-          title={t("profile")}
-          onClick={() => navigate("/profile")}
         />
 
         <ListItem

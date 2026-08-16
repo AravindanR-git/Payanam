@@ -1,5 +1,6 @@
 import { ulid } from "ulid";
 import db from "../db";
+import { enqueueSync } from "../../services/syncEnqueue";
 
 const CONTINUE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -24,14 +25,31 @@ const TripRepository = {
     };
 
     await db.transaction("rw", db.trips, async () => {
-      await db.trips
-        .where("status")
-        .equals("COMPLETED")
-        .modify((completedTrip) => {
-          completedTrip.continuationClosedAt ??= now;
-        });
+      const completedTrips =
+        await db.trips
+          .where("status")
+          .equals("COMPLETED")
+          .toArray();
+
+      const now = Date.now();
+
+      for (const completedTrip of completedTrips) {
+        const endedAt = completedTrip.endedAt || completedTrip.endDate;
+
+        if (
+          !completedTrip.continuationClosedAt &&
+          endedAt &&
+          now - new Date(endedAt).getTime() <= CONTINUE_WINDOW_MS
+        ) {
+          await db.trips.update(completedTrip.id, {
+            continuationClosedAt: now,
+          });
+        }
+      }
 
       await db.trips.add(trip);
+
+      enqueueSync("trips", trip.id, "CREATE", trip);
     });
 
     return trip;
@@ -84,6 +102,8 @@ const TripRepository = {
         trip.endDate = endedAt;
         trip.updatedAt = endedAt;
       });
+
+    enqueueSync("trips", id, "UPDATE", { status: "COMPLETED", endedAt, endDate: endedAt });
   },
 
   canContinueTrip(trip) {

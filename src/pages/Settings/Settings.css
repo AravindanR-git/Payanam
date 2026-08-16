@@ -87,4 +87,28 @@
 .palette-swatch.selected { border-color: var(--color-surface); outline: 2px solid var(--swatch); outline-offset: 1px; }
 .palette-swatch:active { transform: scale(.9); }
 
+.settings-row-icon.green { background: #16A34A; }
+.settings-row-icon.red { background: #DC2626; }
+.settings-row-value { color: var(--color-textSecondary); font-size: 14px; }
+
+.sync-button {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 12px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+}
+.sync-button:disabled { opacity: 0.5; }
+.sync-button .spinning { animation: spin 1s linear infinite; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 @media (min-width: 720px) { .settings-page { max-width: 680px; margin: 0 auto; } }

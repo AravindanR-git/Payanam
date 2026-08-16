@@ -3,11 +3,12 @@ import { motion } from "framer-motion";
 import { Users, Landmark, ArrowLeft } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import useLanguage from "../../i18n/useLanguage";
 import TripRepository from "../../database/repositories/TripRepository";
 
 function CreateTrip() {
-
     const navigate = useNavigate();
+    const { t } = useLanguage();
 
     useEffect(() => {
         const guardActiveJourney = async () => {
@@ -22,14 +23,12 @@ function CreateTrip() {
     }, [navigate]);
 
     return (
-
         <motion.div
             className="create-trip"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: .3 }}
         >
-
             <button
                 className="back-btn"
                 onClick={() => navigate(-1)}
@@ -37,10 +36,10 @@ function CreateTrip() {
                 <ArrowLeft size={20} />
             </button>
 
-            <h1>Create Journey</h1>
+            <h1>{t("createJourney")}</h1>
 
             <p>
-                Choose the type of journey
+                {t("chooseJourneyType")}
             </p>
 
             <div className="trip-types">
@@ -52,10 +51,10 @@ function CreateTrip() {
 
                     <Users size={40} />
 
-                    <h2>Friends / Family</h2>
+                    <h2>{t("friendsJourney")}</h2>
 
                     <span>
-                        Vacations, Road Trips & Outings
+                        {t("vacationsRoadTripsOutings")}
                     </span>
 
                 </div>
@@ -67,10 +66,10 @@ function CreateTrip() {
 
                     <Landmark size={40} />
 
-                    <h2>Thiru Payanam</h2>
+                    <h2>{t("templeJourney")}</h2>
 
                     <span>
-                        Temple & Spiritual Journeys
+                        {t("templeSpiritualJourneys")}
                     </span>
 
                 </div>

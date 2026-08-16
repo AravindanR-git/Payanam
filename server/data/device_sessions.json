@@ -1,0 +1,23 @@
+[
+  {
+    "id": "382327a1-51d9-41c7-bd01-898821eec640",
+    "userId": "5bb1187e-af73-42d0-913d-f77bdaed5121",
+    "deviceId": "fcb734b3-30a1-49ea-bee0-bfcd46deb0af",
+    "lastSyncAt": "2026-08-14T06:37:33.360Z",
+    "createdAt": "2026-08-14T06:37:33.360Z"
+  },
+  {
+    "id": "08149ed5-605f-4305-8ac6-1a1fbe0de8ba",
+    "userId": "aed1d8a4-d3a4-4f86-aee9-d212a22b28ad",
+    "deviceId": "525e7fa2-c62f-4784-8836-7d45119e97e1",
+    "lastSyncAt": "2026-08-14T06:38:20.462Z",
+    "createdAt": "2026-08-14T06:38:20.462Z"
+  },
+  {
+    "id": "985c9917-4307-44b2-87f0-7b7c3c82cc6a",
+    "userId": "9dbecd4b-9dd2-484c-b010-7e6ace0d4ec3",
+    "deviceId": "467d90cd-ab60-43c6-afe7-3f3259163850",
+    "lastSyncAt": "2026-08-14T12:36:14.036Z",
+    "createdAt": "2026-08-14T12:36:14.036Z"
+  }
+]

@@ -7,6 +7,7 @@ import ItemRepository from "../../database/repositories/ItemRepository";
 import { ITEM_ICONS } from "../../constants/iconRegistry";
 
 import "./AddItemSheet.css";
+import useLanguage from "../../i18n/useLanguage";
 
 function AddItemSheet({
   isOpen,
@@ -15,6 +16,7 @@ function AddItemSheet({
   item = null,
   onSaved,
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
   const [search, setSearch] = useState("");
@@ -47,7 +49,7 @@ function AddItemSheet({
 
   const saveItem = async () => {
     if (!name.trim()) {
-      alert("Enter item name");
+      alert(t("enterItemName"));
       return;
     }
 
@@ -80,13 +82,13 @@ function AddItemSheet({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={item ? "Edit Item" : "Add Item"}
+      title={item ? t("editItem") : t("addItem")}
     >
       <div className="category-sheet">
 
         <input
           className="sheet-input"
-          placeholder="Item Name"
+          placeholder={t("itemName")}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -102,7 +104,7 @@ function AddItemSheet({
 
           {filteredIcons.length === 0 ? (
             <div className="no-icons">
-              No icons found
+              {t("noIconsFound")}
             </div>
           ) : (
             <div className="icon-grid">
@@ -136,8 +138,8 @@ function AddItemSheet({
 
         <Button onClick={saveItem}>
           {item
-            ? "Update Item"
-            : "Save Item"}
+            ? t("updateItem")
+            : t("saveItem")}
         </Button>
 
       </div>

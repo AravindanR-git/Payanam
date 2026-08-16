@@ -1,0 +1,63 @@
+[
+  {
+    "id": "trip-1",
+    "userId": "user-1",
+    "tripType": "friends",
+    "tripName": "Test Trip",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-14T06:38:40.025Z",
+    "updatedAt": "2026-08-14T06:38:40.025Z"
+  },
+  {
+    "id": "01KZV8ZV578M9ZV7TT95TAWVGB",
+    "status": "COMPLETED",
+    "endedAt": "2026-08-14T09:13:20.690Z",
+    "endDate": "2026-08-14T09:13:20.690Z",
+    "createdAt": "2026-08-14T09:19:51.655Z",
+    "updatedAt": "2026-08-14T09:19:51.655Z"
+  },
+  {
+    "id": "01KZV8ZV578M9ZV7TT95TAWVGB",
+    "status": "COMPLETED",
+    "endedAt": "2026-08-14T09:13:20.690Z",
+    "endDate": "2026-08-14T09:13:20.690Z",
+    "createdAt": "2026-08-14T09:19:51.708Z",
+    "updatedAt": "2026-08-14T09:19:51.708Z"
+  },
+  {
+    "id": "trip-1",
+    "userId": "user-1",
+    "tripType": "friends",
+    "tripName": "Test Trip",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-14T09:21:30.066Z",
+    "updatedAt": "2026-08-14T09:21:30.066Z"
+  },
+  {
+    "id": "trip-1",
+    "userId": "user-1",
+    "tripType": "friends",
+    "tripName": "Test Trip",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-14T09:23:04.061Z",
+    "updatedAt": "2026-08-14T09:23:04.061Z",
+    "syncStatus": "SYNCED"
+  },
+  {
+    "id": "trip-1",
+    "userId": "user-1",
+    "tripType": "friends",
+    "tripName": "Test Trip",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-14T09:23:04.121Z",
+    "updatedAt": "2026-08-14T09:23:04.121Z",
+    "syncStatus": "SYNCED"
+  },
+  {
+    "id": "test-1",
+    "userId": "user-1",
+    "tripName": "Test",
+    "createdAt": "2026-08-16T18:15:48.754Z",
+    "updatedAt": "2026-08-16T18:15:48.754Z"
+  }
+]

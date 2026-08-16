@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./Overview.css";
 import InsightsNav from "../../components/Insights/InsightsNav";
 import ReportRepository from "../../database/repositories/ReportRepository";
+import useLanguage from "../../i18n/useLanguage";
 
 export default function Overview() {
   const { tripId } = useParams();
+  const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [summary, setSummary] = useState({
     collected: 0,
@@ -62,22 +65,22 @@ export default function Overview() {
       <div className="summary-grid">
 
         <div className="summary-card collected">
-          <span>Collected</span>
+          <span>{t("totalCollected")}</span>
           <h2>₹{summary.collected.toLocaleString("en-IN")}</h2>
         </div>
 
         <div className="summary-card spent">
-          <span>Spent</span>
+          <span>{t("totalSpent")}</span>
           <h2>₹{summary.spent.toLocaleString("en-IN")}</h2>
         </div>
 
         <div className="summary-card balance">
-          <span>Balance</span>
+          <span>{t("balance")}</span>
           <h2>₹{summary.balance.toLocaleString("en-IN")}</h2>
         </div>
 
         <div className="summary-card members">
-          <span>Members</span>
+          <span>{t("participants")}</span>
           <h2>{summary.members}</h2>
         </div>
 
@@ -86,7 +89,7 @@ export default function Overview() {
       <div className="budget-card">
 
         <div className="budget-header">
-          <h3>Budget Usage</h3>
+          <h3>{t("budgetUsage")}</h3>
           <strong>{summary.budgetPercent}%</strong>
         </div>
 
@@ -101,27 +104,37 @@ export default function Overview() {
 
         <div className="budget-footer">
           <span>
-            ₹{summary.spent.toLocaleString("en-IN")} spent
+            ₹{summary.spent.toLocaleString("en-IN")} {t("spentLabel")}
           </span>
 
           <span>
-            ₹{summary.balance.toLocaleString("en-IN")} remaining
+            ₹{summary.balance.toLocaleString("en-IN")} {t("remaining")}
           </span>
         </div>
 
       </div>
 
       <div className={`health-card ${summary.healthClass}`}>
-        <span>Trip Health</span>
+        <span>{t("health")}</span>
         <h3>{summary.health}</h3>
       </div>
-
       <div className="recent-card">
 
-        <h3>Recent Expenses</h3>
+        <div className="card-header">
+
+          <h3>{t("recentExpenses")}</h3>
+
+          <button
+            className="view-all-btn"
+            onClick={() => navigate(`/reports/${tripId}/history`)}
+          >
+            {t("viewHistory")} →
+          </button>
+
+        </div>
 
         {summary.recentExpenses.length === 0 ? (
-          <p>No expenses yet.</p>
+          <p className="empty-text">{t("noExpensesYet")}</p>
         ) : (
           summary.recentExpenses.map((expense) => (
             <div
@@ -135,16 +148,17 @@ export default function Overview() {
                     ? expense.selectedItems
                         .map((i) => i.name)
                         .join(", ")
-                    : "Expense"}
+                    : t("expense")}
                 </strong>
 
                 <small>
-                  {expense.locationName || "Unknown Location"}
+                  {expense.locationName || t("unknownLocation")}
                 </small>
 
               </div>
 
               <div className="recent-right">
+
                 <strong>
                   ₹{Number(expense.amount || 0).toLocaleString("en-IN")}
                 </strong>
@@ -154,7 +168,17 @@ export default function Overview() {
                     ? new Date(expense.expenseTime).toLocaleDateString("en-IN")
                     : ""}
                 </small>
+
+                <button
+                  className="view-history-btn"
+                  onClick={() => navigate(`/reports/${tripId}/history?category=${encodeURIComponent(expense.categoryName || "Others")}`)}
+                  title={t("viewHistory")}
+                >
+                  ›
+                </button>
+
               </div>
+
             </div>
           ))
         )}
