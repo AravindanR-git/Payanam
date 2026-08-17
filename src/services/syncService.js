@@ -1,5 +1,6 @@
 import SyncRepository from "../database/repositories/SyncRepository";
 import db from "../database/db";
+import { processPendingSupabaseTrips } from "./supabaseSync";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 const SYNC_INTERVAL_MS = 30 * 1000;
@@ -216,6 +217,8 @@ const SyncService = {
     if (!navigator.onLine) {
       return { pushed: 0, pulled: 0, failed: 0 };
     }
+
+    await processPendingSupabaseTrips();
 
     const pending = await SyncRepository.getPending(50);
 

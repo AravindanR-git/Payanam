@@ -1,6 +1,7 @@
 import { ulid } from "ulid";
 import db from "../db";
 import { enqueueSync } from "../../services/syncEnqueue";
+import { uploadTrip, pullTrips } from "../../services/supabaseSync";
 
 const CONTINUE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -51,6 +52,16 @@ const TripRepository = {
 
       enqueueSync("trips", trip.id, "CREATE", trip);
     });
+
+    console.log('[TripRepository] createTrip: tripId=', trip.id, 'name=', trip.tripName, 'userId=', trip.userId, 'online=', navigator.onLine);
+
+    if (navigator.onLine) {
+      uploadTrip(trip).catch((error) => {
+        console.error('[TripRepository] createTrip upload error:', error);
+      });
+    } else {
+      console.log('[TripRepository] createTrip: offline, skipping upload');
+    }
 
     return trip;
   },
@@ -103,7 +114,19 @@ const TripRepository = {
         trip.updatedAt = endedAt;
       });
 
+    const updatedTrip = await this.getTrip(id);
+
     enqueueSync("trips", id, "UPDATE", { status: "COMPLETED", endedAt, endDate: endedAt });
+
+    console.log('[TripRepository] endTrip: tripId=', id, 'online=', navigator.onLine);
+
+    if (navigator.onLine) {
+      uploadTrip(updatedTrip).catch((error) => {
+        console.error('[TripRepository] endTrip upload error:', error);
+      });
+    } else {
+      console.log('[TripRepository] endTrip: offline, skipping upload');
+    }
   },
 
   canContinueTrip(trip) {
@@ -137,7 +160,77 @@ const TripRepository = {
       updatedAt: new Date().toISOString(),
     });
 
-    return this.getTrip(id);
+    const updated = await this.getTrip(id);
+
+    console.log('[TripRepository] continueTrip: tripId=', id, 'online=', navigator.onLine);
+
+    if (navigator.onLine) {
+      uploadTrip(updated).catch((error) => {
+        console.error('[TripRepository] continueTrip upload error:', error);
+      });
+    } else {
+      console.log('[TripRepository] continueTrip: offline, skipping upload');
+    }
+
+    return updated;
+  },
+
+  async hydrateTripsFromSupabase(userId) {
+    if (!userId) return [];
+
+    console.log('[TripRepository] hydrateTripsFromSupabase: userId=', userId);
+
+    const { data, error } = await pullTrips(userId);
+
+    if (error || !data || data.length === 0) {
+      console.log('[TripRepository] hydrateTripsFromSupabase: no data or error, data=', data?.length || 0, 'error=', error);
+      return [];
+    }
+
+    const localTrips = await db.trips.toArray();
+    const localMap = new Map(localTrips.map((t) => [t.id, t]));
+
+    console.log('[TripRepository] hydrateTripsFromSupabase: local trips before=', localTrips.length, 'cloud trips=', data.length);
+
+    await db.transaction("rw", db.trips, async () => {
+      for (const cloudTrip of data) {
+        const localTrip = localMap.get(cloudTrip.id);
+        const cloudUpdatedAt = new Date(cloudTrip.updated_at).getTime();
+        const localUpdatedAt = localTrip ? new Date(localTrip.updatedAt).getTime() : 0;
+
+        if (localTrip && cloudUpdatedAt <= localUpdatedAt) {
+          console.log('[TripRepository] hydrateTripsFromSupabase: skipping', cloudTrip.id, 'local newer');
+          continue;
+        }
+
+        const mapped = {
+          id: cloudTrip.id,
+          userId: cloudTrip.user_id,
+          tripName: cloudTrip.trip_name,
+          tripType: cloudTrip.trip_type,
+          status: cloudTrip.status,
+          defaultContributionPerPerson: cloudTrip.default_contribution_per_person || 0,
+          endedAt: cloudTrip.ended_at,
+          endDate: cloudTrip.end_date,
+          continuationClosedAt: cloudTrip.continuation_closed_at,
+          createdAt: cloudTrip.created_at,
+          updatedAt: cloudTrip.updated_at,
+        };
+
+        if (localTrip) {
+          await db.trips.update(cloudTrip.id, mapped);
+          console.log('[TripRepository] hydrateTripsFromSupabase: updated local', cloudTrip.id);
+        } else {
+          await db.trips.add(mapped);
+          console.log('[TripRepository] hydrateTripsFromSupabase: added local', cloudTrip.id);
+        }
+      }
+    });
+
+    const afterTrips = await db.trips.toArray();
+    console.log('[TripRepository] hydrateTripsFromSupabase: local trips after=', afterTrips.length);
+
+    return data;
   },
 };
 

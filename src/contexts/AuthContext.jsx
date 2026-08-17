@@ -1,6 +1,10 @@
-import { createContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useEffect, useState, useCallback, useRef } from 'react';
 import supabase from '../services/supabaseClient';
 import { seedUserData } from '../utils/seedUserData';
+import TripRepository from '../database/repositories/TripRepository';
+import { subscribeToTrips, isRecentlySynced, processPendingSupabaseTrips } from '../services/supabaseSync';
+import { emitTripChange } from '../services/tripSyncEvents';
+import db from '../database/db';
 
 const AuthContext = createContext();
 
@@ -10,6 +14,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
+  const hydratedSessionId = useRef(null);
 
    const loadProfile = useCallback(async (userId, userObj = null) => {
      if (!userId) return null;
@@ -211,8 +216,52 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let mounted = true;
+    let tripSubscription = null;
+    let authSubscription;
+
+    const setupRealtime = (userId) => {
+      if (tripSubscription) {
+        supabase.removeChannel(tripSubscription);
+      }
+      tripSubscription = subscribeToTrips(userId, (payload) => {
+        if (isRecentlySynced(payload.new.id)) {
+          return;
+        }
+
+        const mapped = {
+          id: payload.new.id,
+          userId: payload.new.user_id,
+          tripName: payload.new.trip_name,
+          tripType: payload.new.trip_type,
+          status: payload.new.status,
+          defaultContributionPerPerson: payload.new.default_contribution_per_person || 0,
+          endedAt: payload.new.ended_at,
+          endDate: payload.new.end_date,
+          continuationClosedAt: payload.new.continuation_closed_at,
+          createdAt: payload.new.created_at,
+          updatedAt: payload.new.updated_at,
+        };
+
+        db.trips.put(mapped).then(() => {
+          emitTripChange(mapped.id, payload.eventType);
+        });
+      });
+    };
+
+    const hydrateSession = async (userId, userObj = null) => {
+      console.log('[AuthContext] hydrateSession: userId=', userId);
+      await loadProfile(userId, userObj);
+      await seedUserData(userId);
+      console.log('[AuthContext] hydrateSession: about to hydrate trips for userId=', userId);
+      await TripRepository.hydrateTripsFromSupabase(userId);
+      console.log('[AuthContext] hydrateSession: about to process pending supabase trips');
+      await processPendingSupabaseTrips();
+      setupRealtime(userId);
+      console.log('[AuthContext] hydrateSession: complete for userId=', userId);
+    };
 
     const initialize = async () => {
+      console.log('[AuthContext] initialize: starting');
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
@@ -223,45 +272,74 @@ export function AuthProvider({ children }) {
         }
 
         if (session?.user && mounted) {
-          await loadProfile(session.user.id, session.user);
+          console.log('[AuthContext] initialize: session found, userId=', session.user.id);
+          if (hydratedSessionId.current !== session.user.id) {
+            hydratedSessionId.current = session.user.id;
+            await hydrateSession(session.user.id, session.user);
+          } else {
+            console.log('[AuthContext] initialize: session already hydrated, skipping');
+          }
+        } else {
+          console.log('[AuthContext] initialize: no session');
         }
-      } catch {
+      } catch (err) {
+        console.error('[AuthContext] initialize error:', err);
         if (mounted) setAuthReady(true);
       }
 
       if (mounted) setLoading(false);
+      console.log('[AuthContext] initialize: complete');
     };
 
     initialize();
 
-    let subscription;
+    const handleOnline = async () => {
+      if (mounted && user?.id) {
+        await processPendingSupabaseTrips();
+      }
+    };
+
     try {
       const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
-          if (mounted) {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setAuthReady(true);
+          console.log('[AuthContext] onAuthStateChange: event=', event, 'userId=', session?.user?.id);
+          if (!mounted) return;
 
-            if (session?.user) {
-              await loadProfile(session.user.id, session.user);
-              await seedUserData(session.user.id);
+          setSession(session);
+          setUser(session?.user ?? null);
+          setAuthReady(true);
+
+          if (session?.user) {
+            if (hydratedSessionId.current !== session.user.id) {
+              hydratedSessionId.current = session.user.id;
+              await hydrateSession(session.user.id);
             } else {
-              setProfile(null);
+              console.log('[AuthContext] onAuthStateChange: session already hydrated, skipping');
             }
-
-            setLoading(false);
+          } else {
+            if (tripSubscription) {
+              supabase.removeChannel(tripSubscription);
+              tripSubscription = null;
+            }
+            hydratedSessionId.current = null;
+            setProfile(null);
           }
+
+          setLoading(false);
         }
       );
-      subscription = sub;
+      authSubscription = sub;
     } catch (error) {
-      console.error('Failed to set up auth state change listener:', error);
+      console.error('[AuthContext] onAuthStateChange setup error:', error);
     }
+
+    window.addEventListener('online', handleOnline);
 
     return () => {
       mounted = false;
-      if (subscription) subscription.unsubscribe();
+      if (authSubscription) authSubscription.unsubscribe();
+      if (tripSubscription) supabase.removeChannel(tripSubscription);
+      window.removeEventListener('online', handleOnline);
     };
   }, [loadProfile]);
 

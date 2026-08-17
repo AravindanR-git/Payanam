@@ -20,6 +20,7 @@ import TripRepository from "../../database/repositories/TripRepository";
 import useLanguage from "../../i18n/useLanguage";
 import { useAuth } from "../../contexts/useAuth";
 import safeLogout from "../../services/safeLogout";
+import { onTripChange } from "../../services/tripSyncEvents";
 
 function getTimeBasedGreeting(t) {
   const hour = new Date().getHours();
@@ -40,6 +41,7 @@ function Home() {
   useEffect(() => {
     const loadActiveTrip = async () => {
       const trip = await TripRepository.getActiveTrip();
+      console.log('[Home] loadActiveTrip: trip=', trip ? { id: trip.id, name: trip.tripName, status: trip.status } : null);
       setActiveTrip(trip);
       setIsLoading(false);
 
@@ -53,6 +55,20 @@ function Home() {
 
     loadActiveTrip();
   }, [navigate, location.state?.skipHomeRedirect]);
+
+  useEffect(() => {
+    const unsubscribe = onTripChange(async () => {
+      const trip = await TripRepository.getActiveTrip();
+      console.log('[Home] onTripChange: trip=', trip ? { id: trip.id, name: trip.tripName, status: trip.status } : null);
+      setActiveTrip(trip);
+
+      if (trip && location.pathname === "/") {
+        navigate("/journey", { replace: true });
+      }
+    });
+
+    return unsubscribe;
+  }, [navigate, location.pathname]);
 
   const continueJourney = () => {
     navigate("/journey");
