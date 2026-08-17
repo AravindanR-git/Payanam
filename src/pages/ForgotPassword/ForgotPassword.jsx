@@ -1,6 +1,6 @@
 import "./ForgotPassword.css";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Shield } from "lucide-react";
 
@@ -9,17 +9,28 @@ import useLanguage from "../../i18n/useLanguage";
 
 function ForgotPassword() {
   const { t } = useLanguage();
-  const { resetPassword } = useAuth();
+  const { resetPassword, verifyResetOTP, updatePassword } = useAuth();
 
+  const [step, setStep] = useState("email");
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess(false);
     setLoading(true);
 
     try {
@@ -29,7 +40,83 @@ function ForgotPassword() {
         throw new Error(resetError);
       }
 
+      setStep("otp");
+      setCountdown(30);
+    } catch (err) {
+      setError(err.message || t("somethingWentWrong"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { error: verifyError } = await verifyResetOTP({
+        email,
+        token: otp,
+      });
+
+      if (verifyError) {
+        throw new Error(verifyError);
+      }
+
+      setStep("password");
+    } catch (err) {
+      setError(err.message || t("invalidCredentials"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (newPassword !== confirmPassword) {
+      setError(t("passwordMismatch"));
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError(t("passwordTooShort"));
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error: updateError } = await updatePassword(newPassword);
+
+      if (updateError) {
+        throw new Error(updateError);
+      }
+
       setSuccess(true);
+    } catch (err) {
+      setError(err.message || t("somethingWentWrong"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0) return;
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const { error: resendError } = await resetPassword(email);
+
+      if (resendError) {
+        throw new Error(resendError);
+      }
+
+      setCountdown(30);
     } catch (err) {
       setError(err.message || t("somethingWentWrong"));
     } finally {
@@ -49,7 +136,12 @@ function ForgotPassword() {
           </div>
           <div style={{ textAlign: "center", marginBottom: "16px" }}>
             <Shield size={48} style={{ color: "#007AFF", marginBottom: "8px" }} />
-            <p>{t("enterPasswordReset") || "Enter your email to reset your password."}</p>
+            <p>
+              {step === "email" && (t("enterPasswordReset") || "Enter your email to reset your password.")}
+              {step === "otp" && (t("enterVerificationCode") || "Enter the 6-digit code sent to your email.")}
+              {step === "password" && (t("createPassword") || "Create a new password.")}
+              {step === "success" && (t("resetPasswordSuccess") || "Password reset successfully!")}
+            </p>
           </div>
         </div>
 
@@ -57,17 +149,8 @@ function ForgotPassword() {
           <div className="auth-error">{error}</div>
         )}
 
-        {success ? (
-          <div style={{ textAlign: "center", padding: "20px 0" }}>
-            <p style={{ marginBottom: "20px", color: "#059669" }}>
-              {t("resetEmailSent") || "If that email is registered, a reset link has been sent."}
-            </p>
-            <Link to="/login" className="auth-link">
-              {t("backToLogin")}
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="auth-form">
+        {step === "email" && (
+          <form onSubmit={handleSendOtp} className="auth-form">
             <div className="input-group">
               <label htmlFor="email">{t("email")}</label>
               <input
@@ -86,9 +169,106 @@ function ForgotPassword() {
               className="auth-submit"
               disabled={loading}
             >
-              {loading ? t("loading") : (t("resetPassword") || "Reset Password")}
+              {loading ? t("loading") : (t("resetPassword") || "Send OTP")}
             </button>
           </form>
+        )}
+
+        {step === "otp" && (
+          <form onSubmit={handleVerifyOtp} className="auth-form">
+            <div className="input-group">
+              <label htmlFor="otp">{t("verificationCode") || "Verification Code"}</label>
+              <input
+                id="otp"
+                type="text"
+                placeholder="123456"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+                maxLength={6}
+                autoComplete="one-time-code"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="auth-submit"
+              disabled={loading}
+            >
+              {loading ? t("loading") : (t("verifyAndContinue") || "Verify OTP")}
+            </button>
+
+            <div style={{ textAlign: "center", marginTop: "12px" }}>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={countdown > 0 || loading}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--color-primary, #007AFF)",
+                  cursor: countdown > 0 ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  opacity: countdown > 0 ? 0.5 : 1,
+                }}
+              >
+                {countdown > 0
+                  ? `${t("resendCode") || "Resend Code"} (${countdown}s)`
+                  : (t("resendCode") || "Resend Code")}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === "password" && (
+          <form onSubmit={handleResetPassword} className="auth-form">
+            <div className="input-group">
+              <label htmlFor="newPassword">{t("createPassword")}</label>
+              <input
+                id="newPassword"
+                type="password"
+                placeholder={t("createPassword")}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="input-group">
+              <label htmlFor="confirmPassword">{t("confirmPassword")}</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                placeholder={t("confirmPassword")}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="auth-submit"
+              disabled={loading}
+            >
+              {loading ? (t("loading") || "Updating...") : (t("updatePassword") || "Update Password")}
+            </button>
+          </form>
+        )}
+
+        {success && (
+          <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <p style={{ marginBottom: "20px", color: "#059669" }}>
+              {t("resetPasswordSuccess") || "Password reset successfully!"}
+            </p>
+            <Link to="/login" className="auth-link">
+              {t("backToLogin")}
+            </Link>
+          </div>
         )}
 
         <p className="auth-footer">
