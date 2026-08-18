@@ -14,6 +14,7 @@ function AddCategorySheet({
   onClose,
   category = null,
   trip = null,
+  userId = null,
   onSaved,
 }) {
   const { t } = useLanguage();
@@ -48,6 +49,7 @@ function AddCategorySheet({
   }, [search]);
 
   const saveCategory = async () => {
+    console.log('[Category UI] saveCategory clicked, name=', name, 'trip=', trip);
     if (!name.trim()) {
       alert(t("enterCategoryName"));
       return;
@@ -56,6 +58,7 @@ function AddCategorySheet({
     let savedCategory;
 
     if (category) {
+      console.log('[Category UI] updating existing category');
       await CategoryRepository.updateCategory(category.id, {
         name,
         icon,
@@ -67,13 +70,20 @@ function AddCategorySheet({
         icon,
       };
     } else {
+      console.log('[Category UI] creating new category');
+      const resolvedUserId = userId || trip?.userId;
+      if (!resolvedUserId) {
+        alert('Missing user session. Please log in again.');
+        return;
+      }
       savedCategory =
         await CategoryRepository.createCategory({
           name,
           icon,
-          userId: trip?.userId,
+          userId: resolvedUserId,
           tripTypes: [trip?.tripType || "all"],
         });
+      console.log('[Category UI] createCategory returned:', savedCategory);
     }
 
     await onSaved?.(savedCategory);

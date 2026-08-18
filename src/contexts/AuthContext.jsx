@@ -2,9 +2,16 @@ import { createContext, useEffect, useState, useCallback, useRef } from 'react';
 import supabase from '../services/supabaseClient';
 import { seedUserData } from '../utils/seedUserData';
 import TripRepository from '../database/repositories/TripRepository';
-import { subscribeToTrips, isRecentlySynced, processPendingSupabaseTrips } from '../services/supabaseSync';
+import CategoryRepository from '../database/repositories/CategoryRepository';
+import ItemRepository from '../database/repositories/ItemRepository';
+import ParticipantRepository from '../database/repositories/ParticipantRepository';
+import ContributionRepository from '../database/repositories/ContributionRepository';
+import ExpenseRepository from '../database/repositories/ExpenseRepository';
+import PlaceRepository from '../database/repositories/PlaceRepository';
+import ActivityRepository from '../database/repositories/ActivityRepository';
+import { subscribeToEntity, isRecentlySynced, processAllPendingSupabase, unsubscribeAll } from '../services/supabaseSync';
 import { emitTripChange } from '../services/tripSyncEvents';
-import db from '../database/db';
+import { dbReady } from '../database/db';
 
 const AuthContext = createContext();
 
@@ -177,7 +184,7 @@ export function AuthProvider({ children }) {
 
     const sanitized = file.name
       .toLowerCase()
-      .replace(/[^a-z0-9.\-]/g, '-')
+      .replace(/[^a-z0-9.-]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '') || 'avatar';
 
@@ -216,46 +223,49 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let mounted = true;
-    let tripSubscription = null;
     let authSubscription;
 
     const setupRealtime = (userId) => {
-      if (tripSubscription) {
-        supabase.removeChannel(tripSubscription);
-      }
-      tripSubscription = subscribeToTrips(userId, (payload) => {
-        if (isRecentlySynced(payload.new.id)) {
-          return;
-        }
+      const entities = [
+        'trips',
+        'expenseCategories',
+        'expenseItems',
+        'participants',
+        'contributions',
+        'expenses',
+        'places',
+        'activities',
+      ];
 
-        const mapped = {
-          id: payload.new.id,
-          userId: payload.new.user_id,
-          tripName: payload.new.trip_name,
-          tripType: payload.new.trip_type,
-          status: payload.new.status,
-          defaultContributionPerPerson: payload.new.default_contribution_per_person || 0,
-          endedAt: payload.new.ended_at,
-          endDate: payload.new.end_date,
-          continuationClosedAt: payload.new.continuation_closed_at,
-          createdAt: payload.new.created_at,
-          updatedAt: payload.new.updated_at,
-        };
+      for (const entity of entities) {
+        subscribeToEntity(entity, userId, (recordId, eventType) => {
+          if (entity === 'trips' && isRecentlySynced('trips', recordId)) {
+            return;
+          }
 
-        db.trips.put(mapped).then(() => {
-          emitTripChange(mapped.id, payload.eventType);
+          if (entity === 'trips') {
+            emitTripChange(recordId, eventType);
+          }
         });
-      });
+      }
     };
 
     const hydrateSession = async (userId, userObj = null) => {
       console.log('[AuthContext] hydrateSession: userId=', userId);
+      await dbReady;
       await loadProfile(userId, userObj);
       await seedUserData(userId);
-      console.log('[AuthContext] hydrateSession: about to hydrate trips for userId=', userId);
+      console.log('[AuthContext] hydrateSession: hydrating entities for userId=', userId);
       await TripRepository.hydrateTripsFromSupabase(userId);
-      console.log('[AuthContext] hydrateSession: about to process pending supabase trips');
-      await processPendingSupabaseTrips();
+      await CategoryRepository.hydrateCategoriesFromSupabase(userId);
+      await ItemRepository.hydrateItemsFromSupabase(userId);
+      await ParticipantRepository.hydrateParticipantsFromSupabase(userId);
+      await ContributionRepository.hydrateContributionsFromSupabase(userId);
+      await ExpenseRepository.hydrateExpensesFromSupabase(userId);
+      await PlaceRepository.hydratePlacesFromSupabase(userId);
+      await ActivityRepository.hydrateActivitiesFromSupabase(userId);
+      console.log('[AuthContext] hydrateSession: processing pending supabase');
+      await processAllPendingSupabase();
       setupRealtime(userId);
       console.log('[AuthContext] hydrateSession: complete for userId=', userId);
     };
@@ -295,14 +305,13 @@ export function AuthProvider({ children }) {
 
     const handleOnline = async () => {
       if (mounted && user?.id) {
-        await processPendingSupabaseTrips();
+        await processAllPendingSupabase();
       }
     };
 
     try {
       const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
-          console.log('[AuthContext] onAuthStateChange: event=', event, 'userId=', session?.user?.id);
           if (!mounted) return;
 
           setSession(session);
@@ -313,14 +322,9 @@ export function AuthProvider({ children }) {
             if (hydratedSessionId.current !== session.user.id) {
               hydratedSessionId.current = session.user.id;
               await hydrateSession(session.user.id);
-            } else {
-              console.log('[AuthContext] onAuthStateChange: session already hydrated, skipping');
             }
           } else {
-            if (tripSubscription) {
-              supabase.removeChannel(tripSubscription);
-              tripSubscription = null;
-            }
+            unsubscribeAll();
             hydratedSessionId.current = null;
             setProfile(null);
           }
@@ -330,7 +334,7 @@ export function AuthProvider({ children }) {
       );
       authSubscription = sub;
     } catch (error) {
-      console.error('[AuthContext] onAuthStateChange setup error:', error);
+      console.error('Failed to set up auth state change listener:', error);
     }
 
     window.addEventListener('online', handleOnline);
@@ -338,7 +342,7 @@ export function AuthProvider({ children }) {
     return () => {
       mounted = false;
       if (authSubscription) authSubscription.unsubscribe();
-      if (tripSubscription) supabase.removeChannel(tripSubscription);
+      unsubscribeAll();
       window.removeEventListener('online', handleOnline);
     };
   }, [loadProfile]);

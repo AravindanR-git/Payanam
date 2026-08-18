@@ -109,6 +109,7 @@ function Categories() {
           setSelectedCategory(null);
         }}
         category={selectedCategory}
+        userId={user?.id}
         onSaved={async () => {
           await loadCategories();
           setShowSheet(false);

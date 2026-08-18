@@ -1,6 +1,7 @@
-import { ulid } from "ulid";
+import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 import { enqueueSync } from "../../services/syncEnqueue";
+import { uploadEntity, hydrateEntity } from "../../services/supabaseSync";
 
 const CategoryRepository = {
   async getCategories(tripType = null, userId) {
@@ -48,8 +49,41 @@ const CategoryRepository = {
   async createCategory(data) {
     const now = new Date().toISOString();
 
+    console.log('[CategoryRepository] createCategory: data=', JSON.stringify({ name: data.name, userId: data.userId, tripTypes: data.tripTypes }));
+
+    if (!data.userId) {
+      const error = new Error('CategoryRepository.createCategory: userId is required but was missing');
+      console.error('[CategoryRepository] createCategory: MISSING userId');
+      throw error;
+    }
+
+    const allCategories = await db.expenseCategories.toArray();
+
+    const hasBadOrders = allCategories.some(c => c.displayOrder > 100000);
+
+    if (hasBadOrders) {
+      const sorted = allCategories.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      const updates = sorted.map((cat, idx) => ({
+        id: cat.id,
+        displayOrder: idx + 1,
+      }));
+
+      for (const update of updates) {
+        await db.expenseCategories.update(update.id, { displayOrder: update.displayOrder });
+      }
+
+      console.log('[CategoryRepository] createCategory: normalized displayOrder for', updates.length, 'categories');
+    }
+
+    const existingOrders = await db.expenseCategories
+      .orderBy('displayOrder')
+      .reverse()
+      .toArray();
+
+    const maxOrder = existingOrders.length > 0 ? existingOrders[0].displayOrder : 0;
+
     const category = {
-      id: ulid(),
+      id: generateUuid(),
 
       name: data.name.trim(),
 
@@ -61,7 +95,7 @@ const CategoryRepository = {
 
       isDefault: false,
 
-      displayOrder: Date.now(),
+      displayOrder: maxOrder + 1,
 
       usageCount: 0,
 
@@ -72,9 +106,26 @@ const CategoryRepository = {
       updatedAt: now,
     };
 
+    console.log('[CategoryRepository] createCategory: about to add to Dexie, category.id=', category.id, 'userId=', category.userId, 'displayOrder=', category.displayOrder);
+
     await db.expenseCategories.add(category);
 
+    console.log('[CategoryRepository] createCategory: Dexie add success, id=', category.id);
+
     enqueueSync("expenseCategories", category.id, "CREATE", category);
+
+    console.log('[CategoryRepository] createCategory: enqueued sync, online=', navigator.onLine);
+
+    if (navigator.onLine) {
+      console.log('[CategoryRepository] createCategory: uploading to Supabase');
+      uploadEntity('expenseCategories', category).then((result) => {
+        console.log('[CategoryRepository] createCategory: upload result=', JSON.stringify(result));
+      }).catch((error) => {
+        console.error('[CategoryRepository] createCategory upload error:', error);
+      });
+    } else {
+      console.log('[CategoryRepository] createCategory: offline, skipping upload');
+    }
 
     return category;
   },
@@ -86,15 +137,29 @@ const CategoryRepository = {
       updatedAt: new Date().toISOString(),
     });
 
+    const updated = await db.expenseCategories.get(id);
+
     enqueueSync("expenseCategories", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
 
-    return await db.expenseCategories.get(id);
+    if (navigator.onLine && updated) {
+      uploadEntity('expenseCategories', updated).catch((error) => {
+        console.error('[CategoryRepository] updateCategory upload error:', error);
+      });
+    }
+
+    return updated;
   },
 
   async deleteCategory(id) {
     await db.expenseCategories.delete(id);
 
     enqueueSync("expenseCategories", id, "DELETE", { id });
+  },
+
+  async hydrateCategoriesFromSupabase(userId) {
+    if (!userId) return [];
+    const { data } = await hydrateEntity(userId, 'expenseCategories');
+    return data || [];
   },
 
   async markUsed(categoryId) {

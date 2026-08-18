@@ -1,9 +1,8 @@
 import SyncRepository from "../database/repositories/SyncRepository";
 import db from "../database/db";
-import { processPendingSupabaseTrips } from "./supabaseSync";
+import { processAllPendingSupabase } from "./supabaseSync";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
-const SYNC_INTERVAL_MS = 30 * 1000;
 const MAX_RETRIES = 3;
 
 function getAuthToken() {
@@ -218,7 +217,7 @@ const SyncService = {
       return { pushed: 0, pulled: 0, failed: 0 };
     }
 
-    await processPendingSupabaseTrips();
+    await processAllPendingSupabase();
 
     const pending = await SyncRepository.getPending(50);
 
@@ -263,22 +262,8 @@ const SyncService = {
   },
 
   async startAutoSync() {
-    const trySync = async () => {
-      if (navigator.onLine) {
-        await this.syncNow();
-      }
-    };
-
-    await trySync();
-
-    const interval = setInterval(trySync, SYNC_INTERVAL_MS);
-
-    window.addEventListener("online", trySync);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("online", trySync);
-    };
+    console.log('[SyncService] Express sync is disabled. Supabase sync is handled by AuthContext and repository background uploads.');
+    return () => {};
   },
 };
 

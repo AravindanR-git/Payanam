@@ -254,4 +254,84 @@ db.version(6)
       });
   });
 
+db.version(7)
+  .stores({
+    users: "id,email",
+
+    trips:
+      "id,userId,status,tripType,tripName,createdAt",
+
+    participants:
+      "id,tripId,type,name",
+
+    contributions:
+      "id,tripId,participantId,createdAt",
+
+    expenseCategories:
+      "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+
+    expenseItems:
+      "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed",
+
+    places:
+      "id,name,displayOrder",
+
+    expenses:
+      "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus",
+
+    activities:
+      "id,tripId,type,createdAt",
+
+    pendingSync:
+      "id,tableName,status,createdAt,attempts,error",
+  })
+  .upgrade(async (tx) => {
+    await tx.table("pendingSync")
+      .toCollection()
+      .modify(row => {
+        row.attempts ??= 0;
+        row.error ??= null;
+      });
+  });
+
+db.version(8)
+  .stores({
+    users: "id,email",
+
+    trips:
+      "id,userId,status,tripType,tripName,createdAt",
+
+    participants:
+      "id,tripId,type,name",
+
+    contributions:
+      "id,tripId,participantId,createdAt",
+
+    expenseCategories:
+      "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+
+    expenseItems:
+      "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed",
+
+    places:
+      "id,name,displayOrder",
+
+    expenses:
+      "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus",
+
+    activities:
+      "id,tripId,type,createdAt",
+
+    pendingSync:
+      "id,tableName,status,createdAt,attempts,error",
+  });
+
+db.open().then(() => {
+  console.log('[Dexie] PayanamDB opened, version:', db.verno);
+}).catch((err) => {
+  console.error('[Dexie] PayanamDB open error:', err);
+});
+
+export const dbReady = db.open();
+
 export default db;

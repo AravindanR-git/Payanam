@@ -136,7 +136,16 @@ class LocationService {
         source: "gps",
       };
     } catch (error) {
-      console.error("Location Error:", error);
+      const isPermissionDenied =
+        error &&
+        (error.code === 1 ||
+          error.PERMISSION_DENIED ||
+          error.message?.includes('User denied Geolocation') ||
+          error.message?.includes('permission denied'));
+
+      if (!isPermissionDenied) {
+        console.error("Location Error:", error);
+      }
 
       const cached = await this.getCachedLocation();
 

@@ -1,14 +1,15 @@
-import { ulid } from "ulid";
+import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 import ItemRepository from "./ItemRepository";
 import CategoryRepository from "./CategoryRepository";
 import LocationService from "../../services/LocationService";
 import { enqueueSync } from "../../services/syncEnqueue";
+import { uploadEntity, hydrateEntity } from "../../services/supabaseSync";
 
 const ExpenseRepository = {
   async createExpense(data) {
     const expense = {
-      id: ulid(),
+      id: generateUuid(),
 
       createdAt: new Date().toISOString(),
 
@@ -38,6 +39,12 @@ const ExpenseRepository = {
     }
 
     enqueueSync("expenses", expense.id, "CREATE", expense);
+
+    if (navigator.onLine) {
+      uploadEntity('expenses', expense).catch((error) => {
+        console.error('[ExpenseRepository] createExpense upload error:', error);
+      });
+    }
 
     return expense;
   },
@@ -98,15 +105,29 @@ const ExpenseRepository = {
       syncStatus: "PENDING",
     });
 
+    const updated = await db.expenses.get(id);
+
     enqueueSync("expenses", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
 
-    return await db.expenses.get(id);
+    if (navigator.onLine && updated) {
+      uploadEntity('expenses', updated).catch((error) => {
+        console.error('[ExpenseRepository] updateExpense upload error:', error);
+      });
+    }
+
+    return updated;
   },
 
   async deleteExpense(id) {
     await db.expenses.delete(id);
 
     enqueueSync("expenses", id, "DELETE", { id });
+  },
+
+  async hydrateExpensesFromSupabase(userId) {
+    if (!userId) return [];
+    const { data } = await hydrateEntity(userId, 'expenses');
+    return data || [];
   },
 
   async resolveMissingManualLocations(limit = 10) {

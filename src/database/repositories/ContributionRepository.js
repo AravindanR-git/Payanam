@@ -1,13 +1,14 @@
-import { ulid } from "ulid";
+import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 import { enqueueSync } from "../../services/syncEnqueue";
+import { uploadEntity, hydrateEntity } from "../../services/supabaseSync";
 
 const ContributionRepository = {
 
   async createContribution(data) {
 
     const contribution = {
-      id: ulid(),
+      id: generateUuid(),
       createdAt: new Date().toISOString(),
       ...data,
     };
@@ -15,6 +16,12 @@ const ContributionRepository = {
     await db.contributions.add(contribution);
 
     enqueueSync("contributions", contribution.id, "CREATE", contribution);
+
+    if (navigator.onLine) {
+      uploadEntity('contributions', contribution).catch((error) => {
+        console.error('[ContributionRepository] createContribution upload error:', error);
+      });
+    }
 
     return contribution;
   },
@@ -35,6 +42,12 @@ const ContributionRepository = {
       .equals(tripId)
       .toArray();
 
+  },
+
+  async hydrateContributionsFromSupabase(userId) {
+    if (!userId) return [];
+    const { data } = await hydrateEntity(userId, 'contributions');
+    return data || [];
   }
 
 };

@@ -1,31 +1,42 @@
 import db from "../db";
 import defaultCategories from "./defaultCategories";
 import defaultItems from "./defaultItems";
+import { dbReady } from "../db";
 
 export async function seedDatabase() {
-  const categoryIds = new Set(
-    (await db.expenseCategories.toArray()).map(
-      (category) => category.id
-    )
-  );
+  await dbReady;
 
-  const missingCategories = defaultCategories.filter(
-    (category) => !categoryIds.has(category.id)
-  );
+  try {
+    const existingCategoryIds = new Set(
+      (await db.expenseCategories.toArray()).map(
+        (category) => category.id
+      )
+    );
 
-  if (missingCategories.length) {
-    await db.expenseCategories.bulkAdd(missingCategories);
+    const missingCategories = defaultCategories.filter(
+      (category) => !existingCategoryIds.has(category.id)
+    );
+
+    if (missingCategories.length) {
+      await db.expenseCategories.bulkPut(missingCategories);
+    }
+  } catch (error) {
+    console.error('[seedDatabase] categories seed error:', error);
   }
 
-  const itemIds = new Set(
-    (await db.expenseItems.toArray()).map((item) => item.id)
-  );
+  try {
+    const existingItemIds = new Set(
+      (await db.expenseItems.toArray()).map((item) => item.id)
+    );
 
-  const missingItems = defaultItems.filter(
-    (item) => !itemIds.has(item.id)
-  );
+    const missingItems = defaultItems.filter(
+      (item) => !existingItemIds.has(item.id)
+    );
 
-  if (missingItems.length) {
-    await db.expenseItems.bulkAdd(missingItems);
+    if (missingItems.length) {
+      await db.expenseItems.bulkPut(missingItems);
+    }
+  } catch (error) {
+    console.error('[seedDatabase] items seed error:', error);
   }
 }

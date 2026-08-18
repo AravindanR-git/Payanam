@@ -33,28 +33,22 @@ import RequireAuth from "./components/RequireAuth";
 
 import { seedDatabase } from "./database/seed/seedDatabase";
 import ExpenseRepository from "./database/repositories/ExpenseRepository";
-import SyncService from "./services/syncService";
+import { dbReady } from "./database/db";
 
 function App() {
 
   useEffect(() => {
-
-    seedDatabase();
-
-  }, []);
-
-  useEffect(() => {
-    let cleanup;
-
-    const startSync = async () => {
-      cleanup = await SyncService.startAutoSync();
+    const start = async () => {
+      try {
+        await dbReady;
+        console.log('[App] Dexie ready, version:', (await import('./database/db.js')).db.verno);
+        await seedDatabase();
+      } catch (err) {
+        console.error('[App] startup error:', err);
+      }
     };
 
-    startSync();
-
-    return () => {
-      if (cleanup) cleanup();
-    };
+    start();
   }, []);
 
   useEffect(() => {
@@ -119,6 +113,7 @@ function App() {
                 element={<RequireAuth><ExpenseHistory /></RequireAuth>}
               />
               <Route path="/history" element={<RequireAuth><TripHistory /></RequireAuth>} />
+
               <Route
                 path="/reports/:tripId/overview"
                 element={<RequireAuth><Overview /></RequireAuth>}

@@ -1,6 +1,7 @@
-import { ulid } from "ulid";
+import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 import SyncService from "../../services/syncService";
+import { uploadEntity, hydrateEntity } from "../../services/supabaseSync";
 
 const ActivityRepository = {
 
@@ -8,7 +9,7 @@ const ActivityRepository = {
 
     const activity = {
 
-      id: ulid(),
+      id: generateUuid(),
 
       createdAt: new Date().toISOString(),
 
@@ -18,6 +19,12 @@ const ActivityRepository = {
     await db.activities.add(activity);
 
     SyncService.enqueue("activities", activity.id, "CREATE", activity);
+
+    if (navigator.onLine) {
+      uploadEntity('activities', activity).catch((error) => {
+        console.error('[ActivityRepository] addActivity upload error:', error);
+      });
+    }
 
   },
 
@@ -30,6 +37,12 @@ const ActivityRepository = {
       .reverse()
       .toArray();
 
+  },
+
+  async hydrateActivitiesFromSupabase(userId) {
+    if (!userId) return [];
+    const { data } = await hydrateEntity(userId, 'activities');
+    return data || [];
   }
 
 };

@@ -1,7 +1,7 @@
-import { ulid } from "ulid";
+import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 import { enqueueSync } from "../../services/syncEnqueue";
-import { uploadTrip, pullTrips } from "../../services/supabaseSync";
+import { uploadEntity, pullEntity, mapSupabaseRowToLocalRow, validateRecordForDexie } from "../../services/supabaseSync";
 
 const CONTINUE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -18,7 +18,7 @@ const TripRepository = {
     const now = new Date().toISOString();
 
     const trip = {
-      id: ulid(),
+      id: generateUuid(),
       status: "ACTIVE",
       createdAt: now,
       updatedAt: now,
@@ -56,7 +56,7 @@ const TripRepository = {
     console.log('[TripRepository] createTrip: tripId=', trip.id, 'name=', trip.tripName, 'userId=', trip.userId, 'online=', navigator.onLine);
 
     if (navigator.onLine) {
-      uploadTrip(trip).catch((error) => {
+      uploadEntity('trips', trip).catch((error) => {
         console.error('[TripRepository] createTrip upload error:', error);
       });
     } else {
@@ -121,7 +121,7 @@ const TripRepository = {
     console.log('[TripRepository] endTrip: tripId=', id, 'online=', navigator.onLine);
 
     if (navigator.onLine) {
-      uploadTrip(updatedTrip).catch((error) => {
+      uploadEntity('trips', updatedTrip).catch((error) => {
         console.error('[TripRepository] endTrip upload error:', error);
       });
     } else {
@@ -165,7 +165,7 @@ const TripRepository = {
     console.log('[TripRepository] continueTrip: tripId=', id, 'online=', navigator.onLine);
 
     if (navigator.onLine) {
-      uploadTrip(updated).catch((error) => {
+      uploadEntity('trips', updated).catch((error) => {
         console.error('[TripRepository] continueTrip upload error:', error);
       });
     } else {
@@ -180,7 +180,7 @@ const TripRepository = {
 
     console.log('[TripRepository] hydrateTripsFromSupabase: userId=', userId);
 
-    const { data, error } = await pullTrips(userId);
+    const { data, error } = await pullEntity(userId, 'trips');
 
     if (error || !data || data.length === 0) {
       console.log('[TripRepository] hydrateTripsFromSupabase: no data or error, data=', data?.length || 0, 'error=', error);
@@ -194,35 +194,39 @@ const TripRepository = {
 
     await db.transaction("rw", db.trips, async () => {
       for (const cloudTrip of data) {
-        const localTrip = localMap.get(cloudTrip.id);
-        const cloudUpdatedAt = new Date(cloudTrip.updated_at).getTime();
+        const mapped = mapSupabaseRowToLocalRow('trips', cloudTrip);
+        const localTrip = localMap.get(mapped.id);
+        const cloudUpdatedAt = new Date(mapped.updatedAt).getTime();
         const localUpdatedAt = localTrip ? new Date(localTrip.updatedAt).getTime() : 0;
 
+        console.log('[TripRepository] hydrating trip id=', mapped.id, 'name=', mapped.tripName, 'status=', mapped.status);
+        console.log('[TripRepository] mapped trip=', JSON.stringify(mapped));
+
+        const nonCloneable = validateRecordForDexie(mapped);
+        if (nonCloneable) {
+          console.error('[TripRepository] NON-CLONEABLE PROPERTY DETECTED:', nonCloneable);
+          throw new Error(`Non-cloneable property in mapped trip: ${nonCloneable.key} (type: ${nonCloneable.type})`);
+        }
+
+        try {
+          structuredClone(mapped);
+          console.log('[TripRepository] structuredClone=SUCCESS for trip', mapped.id);
+        } catch (cloneError) {
+          console.error('[TripRepository] structuredClone=FAILED for trip', mapped.id, 'error=', cloneError);
+          throw cloneError;
+        }
+
         if (localTrip && cloudUpdatedAt <= localUpdatedAt) {
-          console.log('[TripRepository] hydrateTripsFromSupabase: skipping', cloudTrip.id, 'local newer');
+          console.log('[TripRepository] hydrateTripsFromSupabase: skipping', mapped.id, 'local newer');
           continue;
         }
 
-        const mapped = {
-          id: cloudTrip.id,
-          userId: cloudTrip.user_id,
-          tripName: cloudTrip.trip_name,
-          tripType: cloudTrip.trip_type,
-          status: cloudTrip.status,
-          defaultContributionPerPerson: cloudTrip.default_contribution_per_person || 0,
-          endedAt: cloudTrip.ended_at,
-          endDate: cloudTrip.end_date,
-          continuationClosedAt: cloudTrip.continuation_closed_at,
-          createdAt: cloudTrip.created_at,
-          updatedAt: cloudTrip.updated_at,
-        };
-
         if (localTrip) {
-          await db.trips.update(cloudTrip.id, mapped);
-          console.log('[TripRepository] hydrateTripsFromSupabase: updated local', cloudTrip.id);
+          await db.trips.update(mapped.id, mapped);
+          console.log('[TripRepository] hydrateTripsFromSupabase: updated local', mapped.id);
         } else {
           await db.trips.add(mapped);
-          console.log('[TripRepository] hydrateTripsFromSupabase: added local', cloudTrip.id);
+          console.log('[TripRepository] hydrateTripsFromSupabase: added local', mapped.id);
         }
       }
     });

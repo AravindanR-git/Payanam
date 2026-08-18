@@ -1,6 +1,7 @@
-import { ulid } from "ulid";
+import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 import SyncService from "../../services/syncService";
+import { uploadEntity, hydrateEntity } from "../../services/supabaseSync";
 
 const ItemRepository = {
   async getItems(categoryId) {
@@ -40,8 +41,33 @@ const ItemRepository = {
   async createItem(data) {
     const now = new Date().toISOString();
 
+    const allItems = await db.expenseItems.toArray();
+
+    const hasBadOrders = allItems.some(c => c.displayOrder > 100000);
+
+    if (hasBadOrders) {
+      const sorted = allItems.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      const updates = sorted.map((item, idx) => ({
+        id: item.id,
+        displayOrder: idx + 1,
+      }));
+
+      for (const update of updates) {
+        await db.expenseItems.update(update.id, { displayOrder: update.displayOrder });
+      }
+
+      console.log('[ItemRepository] createItem: normalized displayOrder for', updates.length, 'items');
+    }
+
+    const existingOrders = await db.expenseItems
+      .orderBy('displayOrder')
+      .reverse()
+      .toArray();
+
+    const maxOrder = existingOrders.length > 0 ? existingOrders[0].displayOrder : 0;
+
     const item = {
-      id: ulid(),
+      id: generateUuid(),
 
       categoryId: data.categoryId,
 
@@ -49,7 +75,7 @@ const ItemRepository = {
 
       icon: data.icon || "📦",
 
-      displayOrder: Date.now(),
+      displayOrder: maxOrder + 1,
 
       usageCount: 0,
 
@@ -65,6 +91,12 @@ const ItemRepository = {
     await db.expenseItems.add(item);
 
     SyncService.enqueue("expenseItems", item.id, "CREATE", item);
+
+    if (navigator.onLine) {
+      uploadEntity('expenseItems', item).catch((error) => {
+        console.error('[ItemRepository] createItem upload error:', error);
+      });
+    }
 
     return item;
   },
@@ -96,15 +128,29 @@ const ItemRepository = {
       updatedAt: new Date().toISOString(),
     });
 
+    const updated = await db.expenseItems.get(id);
+
     SyncService.enqueue("expenseItems", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
 
-    return await db.expenseItems.get(id);
+    if (navigator.onLine && updated) {
+      uploadEntity('expenseItems', updated).catch((error) => {
+        console.error('[ItemRepository] updateItem upload error:', error);
+      });
+    }
+
+    return updated;
   },
 
   async deleteItem(id) {
     await db.expenseItems.delete(id);
 
     SyncService.enqueue("expenseItems", id, "DELETE", { id });
+  },
+
+  async hydrateItemsFromSupabase(userId) {
+    if (!userId) return [];
+    const { data } = await hydrateEntity(userId, 'expenseItems');
+    return data || [];
   },
 };
 

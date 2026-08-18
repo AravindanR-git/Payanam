@@ -18,16 +18,18 @@ export async function seedUserData(userId) {
 
   const { error: catError } = await supabase
     .from('expense_categories')
-    .insert(
+    .upsert(
       defaultCategories.map((cat) => ({
+        id: cat.id,
         user_id: userId,
         name: cat.name,
         icon: cat.icon,
         color: cat.color,
         trip_types: cat.tripTypes || [],
         display_order: cat.displayOrder,
-        is_default: false,
-      }))
+        is_default: true,
+      })),
+      { onConflict: 'id' }
     );
 
   if (catError) {
