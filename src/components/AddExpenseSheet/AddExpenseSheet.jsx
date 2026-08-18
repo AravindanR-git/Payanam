@@ -216,6 +216,7 @@ function AddExpenseSheet({
         }
         category={selectedCategory}
         item={null}
+        userId={trip?.userId}
         onSaved={handleItemCreated}
       />
     </>

@@ -1,6 +1,6 @@
 import "./Items.css";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -14,10 +14,13 @@ import IconAvatar from "../../components/IconAvatar/IconAvatar";
 import ItemRepository from "../../database/repositories/ItemRepository";
 import AddItemSheet from "../../components/AddItemSheet/AddItemSheet";
 import useLanguage from "../../i18n/useLanguage";
+import { onItemChange } from "../../services/itemSyncEvents";
+import { useAuth } from "../../contexts/useAuth";
 
 function Items() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   const { state } = useLocation();
 
@@ -31,30 +34,28 @@ function Items() {
   const [selectedItem, setSelectedItem] =
     useState(null);
 
-  useEffect(() => {
-
-    if (!category) {
-
-      navigate("/categories");
-
-      return;
-
-    }
-
-    loadItems();
-
-  }, []);
-
-  const loadItems = async () => {
-
-    const list =
-      await ItemRepository.getItems(
-        category.id
-      );
-
+  const loadItems = useCallback(async () => {
+    if (!category) return;
+    const list = await ItemRepository.getItems(
+      category.id
+    );
     setItems(list);
+  }, [category]);
 
-  };
+  useEffect(() => {
+    if (!category) {
+      navigate("/categories");
+      return;
+    }
+    loadItems();
+  }, [category, navigate, loadItems]);
+
+  useEffect(() => {
+    const unsubscribe = onItemChange(() => {
+      loadItems();
+    });
+    return unsubscribe;
+  }, [loadItems]);
 
   const addItem = () => {
 
@@ -110,13 +111,12 @@ function Items() {
         >
 
           <IconAvatar
-            icon={category.icon}
-            name={category.name}
+            icon={category?.icon}
+            name={category?.name}
             size={44}
           />
-
           <h1>
-            {category.name}
+            {category?.name}
           </h1>
 
         </div>
@@ -219,6 +219,7 @@ function Items() {
         }}
         item={selectedItem}
         category={category}
+        userId={user?.id}
         onSaved={loadItems}
       />
 

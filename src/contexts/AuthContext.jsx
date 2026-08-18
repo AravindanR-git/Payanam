@@ -11,6 +11,8 @@ import PlaceRepository from '../database/repositories/PlaceRepository';
 import ActivityRepository from '../database/repositories/ActivityRepository';
 import { subscribeToEntity, isRecentlySynced, processAllPendingSupabase, unsubscribeAll } from '../services/supabaseSync';
 import { emitTripChange } from '../services/tripSyncEvents';
+import { emitCategoryChange } from '../services/categorySyncEvents';
+import { emitItemChange } from '../services/itemSyncEvents';
 import { dbReady } from '../database/db';
 
 const AuthContext = createContext();
@@ -239,12 +241,20 @@ export function AuthProvider({ children }) {
 
       for (const entity of entities) {
         subscribeToEntity(entity, userId, (recordId, eventType) => {
-          if (entity === 'trips' && isRecentlySynced('trips', recordId)) {
+          if (isRecentlySynced(entity, recordId)) {
             return;
           }
 
           if (entity === 'trips') {
             emitTripChange(recordId, eventType);
+          }
+
+          if (entity === 'expenseCategories') {
+            emitCategoryChange(recordId, eventType);
+          }
+
+          if (entity === 'expenseItems') {
+            emitItemChange(recordId, eventType);
           }
         });
       }

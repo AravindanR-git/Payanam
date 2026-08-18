@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 
 import BottomSheet from "../BottomSheet/BottomSheet";
 import Button from "../Button/Button";
@@ -21,9 +21,12 @@ function AddCategorySheet({
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
   const [search, setSearch] = useState("");
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
+
+    savingRef.current = false;
 
     if (category) {
       setName(category.name || "");
@@ -50,43 +53,54 @@ function AddCategorySheet({
 
   const saveCategory = async () => {
     console.log('[Category UI] saveCategory clicked, name=', name, 'trip=', trip);
+    if (savingRef.current) {
+      console.log('[Category UI] saveCategory already in progress, skipping duplicate');
+      return;
+    }
+
     if (!name.trim()) {
       alert(t("enterCategoryName"));
       return;
     }
 
+    savingRef.current = true;
+
     let savedCategory;
 
-    if (category) {
-      console.log('[Category UI] updating existing category');
-      await CategoryRepository.updateCategory(category.id, {
-        name,
-        icon,
-      });
-
-      savedCategory = {
-        ...category,
-        name,
-        icon,
-      };
-    } else {
-      console.log('[Category UI] creating new category');
-      const resolvedUserId = userId || trip?.userId;
-      if (!resolvedUserId) {
-        alert('Missing user session. Please log in again.');
-        return;
-      }
-      savedCategory =
-        await CategoryRepository.createCategory({
+    try {
+      if (category) {
+        console.log('[Category UI] updating existing category');
+        await CategoryRepository.updateCategory(category.id, {
           name,
           icon,
-          userId: resolvedUserId,
-          tripTypes: [trip?.tripType || "all"],
         });
-      console.log('[Category UI] createCategory returned:', savedCategory);
-    }
 
-    await onSaved?.(savedCategory);
+        savedCategory = {
+          ...category,
+          name,
+          icon,
+        };
+      } else {
+        console.log('[Category UI] creating new category');
+        const resolvedUserId = userId || trip?.userId;
+        if (!resolvedUserId) {
+          alert('Missing user session. Please log in again.');
+          return;
+        }
+        savedCategory =
+          await CategoryRepository.createCategory({
+            name,
+            icon,
+            userId: resolvedUserId,
+            tripTypes: [trip?.tripType || "all"],
+          });
+        console.log('[Category UI] createCategory returned:', savedCategory);
+      }
+
+      await onSaved?.(savedCategory);
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   return (

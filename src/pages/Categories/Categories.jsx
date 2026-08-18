@@ -14,6 +14,7 @@ import CategoryRepository from "../../database/repositories/CategoryRepository";
 import AddCategorySheet from "../../components/AddCategorySheet/AddCategorySheet";
 import useLanguage from "../../i18n/useLanguage";
 import { useAuth } from "../../contexts/useAuth";
+import { onCategoryChange } from "../../services/categorySyncEvents";
 
 function Categories() {
   const navigate = useNavigate();
@@ -24,14 +25,22 @@ function Categories() {
   const [showSheet, setShowSheet] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
   const loadCategories = async () => {
     const list = await CategoryRepository.getCategories(null, user?.id);
     setCategories(list);
   };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onCategoryChange(() => {
+      loadCategories();
+    });
+
+    return unsubscribe;
+  }, []);
 
   const editCategory = (category) => {
     setSelectedCategory(category);

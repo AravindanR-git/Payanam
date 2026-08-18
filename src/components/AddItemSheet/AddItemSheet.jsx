@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 
 import BottomSheet from "../BottomSheet/BottomSheet";
 import Button from "../Button/Button";
@@ -14,15 +14,19 @@ function AddItemSheet({
   onClose,
   category,
   item = null,
+  userId = null,
   onSaved,
 }) {
   const { t } = useLanguage();
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
   const [search, setSearch] = useState("");
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
+
+    savingRef.current = false;
 
     if (item) {
       setName(item.name || "");
@@ -48,34 +52,48 @@ function AddItemSheet({
   }, [search]);
 
   const saveItem = async () => {
+    console.log('[Item UI] saveItem clicked, name=', name, 'category=', category?.id);
+    if (savingRef.current) {
+      console.log('[Item UI] saveItem already in progress, skipping duplicate');
+      return;
+    }
+
     if (!name.trim()) {
       alert(t("enterItemName"));
       return;
     }
 
+    savingRef.current = true;
+
     let savedItem;
 
-    if (item) {
-      await ItemRepository.updateItem(item.id, {
-        name,
-        icon,
-      });
-
-      savedItem = {
-        ...item,
-        name,
-        icon,
-      };
-    } else {
-      savedItem =
-        await ItemRepository.createItem({
-          categoryId: category.id,
+    try {
+      if (item) {
+        await ItemRepository.updateItem(item.id, {
           name,
           icon,
         });
-    }
 
-    await onSaved?.(savedItem);
+        savedItem = {
+          ...item,
+          name,
+          icon,
+        };
+      } else {
+        savedItem =
+          await ItemRepository.createItem({
+            categoryId: category.id,
+            name,
+            icon,
+            userId,
+          });
+        console.log('[Item UI] createItem returned:', savedItem);
+      }
+
+      await onSaved?.(savedItem);
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   return (

@@ -221,6 +221,19 @@ export async function processPendingSupabase(entity) {
       continue;
     }
 
+    if (entry.operation === 'DELETE') {
+      const result = await deleteEntity(entity, entry.recordId);
+
+      if (result.error) {
+        results.failed++;
+        await SyncRepository.markFailed(entry.id, result.error);
+      } else {
+        results.uploaded++;
+        await SyncRepository.markSynced(entry.id);
+      }
+      continue;
+    }
+
     const localRecord = await db.table(entity).get(entry.recordId);
 
     if (!localRecord) {
@@ -507,6 +520,21 @@ export function subscribeToEntity(entity, userId, callback) {
       table: tableName,
       filter: `user_id=eq.${userId}`,
     }, (payload) => {
+      console.log(`[Realtime] ${entity} ${payload.eventType} id=${payload.new?.id || payload.old?.id}`);
+
+      if (payload.eventType === 'DELETE') {
+        const deletedId = String(payload.old?.id || payload.record?.id || '');
+        if (deletedId && isValidUuid(deletedId)) {
+          db.table(entity).delete(deletedId).then(() => {
+            console.log(`[Realtime] ${entity} Dexie delete success id=${deletedId}`);
+            callback(deletedId, 'DELETE');
+          }).catch((error) => {
+            console.error(`[SupabaseSync] Realtime DELETE ${entity} failed:`, error);
+          });
+        }
+        return;
+      }
+
       const mapped = mapSupabaseRowToLocalRow(entity, payload.new);
 
       const nonCloneable = validateRecordForDexie(mapped);
@@ -516,10 +544,16 @@ export function subscribeToEntity(entity, userId, callback) {
       }
 
       db.table(entity).put(mapped).then(() => {
+        console.log(`[Realtime] ${entity} Dexie upsert success id=${mapped.id}`);
         callback(mapped.id, payload.eventType);
       });
     })
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log(`[Realtime] ${entity} subscription status=${status}`);
+      if (err) {
+        console.error(`[Realtime] ${entity} subscription error:`, err);
+      }
+    });
 
   entitySubscriptions.set(channelName, channel);
 
@@ -564,6 +598,36 @@ export function unsubscribeAll() {
     supabase.removeChannel(channel);
   }
   entitySubscriptions.clear();
+}
+
+export async function deleteEntity(entity, recordId) {
+  const tableName = getTableName(entity);
+
+  markRecentlySynced(entity, recordId);
+
+  const { error } = await supabase
+    .from(tableName)
+    .delete()
+    .eq('id', recordId);
+
+  if (error) {
+    console.error(`[SupabaseSync] delete ${entity} FAILED:`, {
+      id: recordId,
+      table: tableName,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+    return { error: error.message || String(error) };
+  }
+
+  console.log(`[SupabaseSync] delete ${entity} SUCCESS:`, {
+    id: recordId,
+    table: tableName,
+  });
+
+  return { error: null };
 }
 
 export { recentlySynced, isRecentlySynced, markRecentlySynced };

@@ -1,7 +1,7 @@
 import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 import { enqueueSync } from "../../services/syncEnqueue";
-import { uploadEntity, hydrateEntity } from "../../services/supabaseSync";
+import { uploadEntity, deleteEntity, hydrateEntity } from "../../services/supabaseSync";
 
 const CategoryRepository = {
   async getCategories(tripType = null, userId) {
@@ -131,15 +131,14 @@ const CategoryRepository = {
   },
 
   async updateCategory(id, data) {
-    await db.expenseCategories.update(id, {
-      ...data,
+    const now = new Date().toISOString();
+    const updatePayload = { ...data, updatedAt: now };
 
-      updatedAt: new Date().toISOString(),
-    });
+    await db.expenseCategories.update(id, updatePayload);
 
     const updated = await db.expenseCategories.get(id);
 
-    enqueueSync("expenseCategories", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
+    enqueueSync("expenseCategories", id, "UPDATE", updatePayload);
 
     if (navigator.onLine && updated) {
       uploadEntity('expenseCategories', updated).catch((error) => {
@@ -154,6 +153,12 @@ const CategoryRepository = {
     await db.expenseCategories.delete(id);
 
     enqueueSync("expenseCategories", id, "DELETE", { id });
+
+    if (navigator.onLine) {
+      deleteEntity('expenseCategories', id).catch((error) => {
+        console.error('[CategoryRepository] deleteCategory error:', error);
+      });
+    }
   },
 
   async hydrateCategoriesFromSupabase(userId) {
@@ -170,12 +175,24 @@ const CategoryRepository = {
     if (!category) return;
 
     const now = new Date().toISOString();
-
-    await db.expenseCategories.update(categoryId, {
+    const updatePayload = {
       usageCount: (category.usageCount || 0) + 1,
       lastUsed: now,
       updatedAt: now,
-    });
+    };
+
+    await db.expenseCategories.update(categoryId, updatePayload);
+
+    enqueueSync("expenseCategories", categoryId, "UPDATE", updatePayload);
+
+    if (navigator.onLine) {
+      const updated = await db.expenseCategories.get(categoryId);
+      if (updated) {
+        uploadEntity('expenseCategories', updated).catch((error) => {
+          console.error('[CategoryRepository] markUsed upload error:', error);
+        });
+      }
+    }
   },
 };
 
