@@ -59,7 +59,7 @@ async function getCached(entity, localId, cacheKey, resolver) {
   return value;
 }
 
-async function resolveCategoryRemoteId(localId) {
+async function resolveCategoryRemoteId(localId, userId = null) {
   if (!isDefaultCategoryId(localId)) {
     return localId;
   }
@@ -67,11 +67,12 @@ async function resolveCategoryRemoteId(localId) {
   const cacheKey = `category:${localId}`;
   return getCached('expenseCategories', localId, cacheKey, async () => {
     const local = await db.expenseCategories.get(localId);
-    if (local?.defaultKey) {
+    const ownerId = local?.userId || userId;
+    if (local?.defaultKey && ownerId) {
       const { data } = await supabase
         .from('expense_categories')
         .select('id')
-        .eq('user_id', local.userId)
+        .eq('user_id', ownerId)
         .eq('default_key', local.defaultKey)
         .maybeSingle();
 
@@ -94,7 +95,7 @@ async function resolveCategoryRemoteId(localId) {
   });
 }
 
-async function resolveItemRemoteId(localId) {
+async function resolveItemRemoteId(localId, userId = null) {
   if (!isDefaultItemId(localId)) {
     return localId;
   }
@@ -102,11 +103,12 @@ async function resolveItemRemoteId(localId) {
   const cacheKey = `item:${localId}`;
   return getCached('expenseItems', localId, cacheKey, async () => {
     const local = await db.expenseItems.get(localId);
-    if (local?.defaultKey) {
+    const ownerId = local?.userId || userId;
+    if (local?.defaultKey && ownerId) {
       const { data } = await supabase
         .from('expense_items')
         .select('id')
-        .eq('user_id', local.userId)
+        .eq('user_id', ownerId)
         .eq('default_key', local.defaultKey)
         .maybeSingle();
 
@@ -183,16 +185,16 @@ async function resolveItemLocalId(remoteId, userId, defaultKey) {
   });
 }
 
-async function resolveLocalCategoryIdToRemote(categoryId) {
+async function resolveLocalCategoryIdToRemote(categoryId, userId = null) {
   if (!categoryId) return null;
   if (isValidUuid(categoryId)) return categoryId;
-  return resolveCategoryRemoteId(categoryId);
+  return resolveCategoryRemoteId(categoryId, userId);
 }
 
-async function resolveLocalItemIdToRemote(itemId) {
+async function resolveLocalItemIdToRemote(itemId, userId = null) {
   if (!itemId) return null;
   if (isValidUuid(itemId)) return itemId;
-  return resolveItemRemoteId(itemId);
+  return resolveItemRemoteId(itemId, userId);
 }
 
 export function getDefaultCategoryIds() {
@@ -241,19 +243,19 @@ export async function resolveRemoteToLocal(entity, remoteId, userId, extra = {})
   }
 }
 
-export async function resolveForeignKey(entity, foreignKeyLocal) {
+export async function resolveForeignKey(entity, foreignKeyLocal, userId = null) {
   if (!foreignKeyLocal) return null;
 
   switch (entity) {
     case 'expenseItems':
-      return resolveLocalCategoryIdToRemote(foreignKeyLocal);
+      return resolveLocalCategoryIdToRemote(foreignKeyLocal, userId);
     case 'expenses': {
       const parts = String(foreignKeyLocal).split('|');
       const categoryId = parts[0] || null;
       const itemId = parts[1] || null;
 
-      const resolvedCategory = categoryId ? await resolveLocalCategoryIdToRemote(categoryId) : null;
-      const resolvedItem = itemId ? await resolveLocalItemIdToRemote(itemId) : null;
+      const resolvedCategory = categoryId ? await resolveLocalCategoryIdToRemote(categoryId, userId) : null;
+      const resolvedItem = itemId ? await resolveLocalItemIdToRemote(itemId, userId) : null;
 
       if (resolvedCategory && resolvedItem) {
         return `${resolvedCategory}|${resolvedItem}`;
@@ -273,18 +275,14 @@ export async function mapLocalRecordToRemote(entity, record) {
       mapped.id = await resolveLocalToRemote('expenseCategories', record.id) || record.id;
       break;
     case 'expenseItems': {
-      const remoteCategoryId = await resolveLocalCategoryIdToRemote(record.categoryId);
-      mapped.categoryId = record.categoryId;
+      const remoteCategoryId = await resolveLocalCategoryIdToRemote(record.category_id, record.user_id);
       mapped.category_id = remoteCategoryId;
-      mapped.id = await resolveLocalToRemote('expenseItems', record.id) || record.id;
+      mapped.id = await resolveItemRemoteId(record.id, record.user_id) || record.id;
       break;
     }
     case 'expenses': {
-      const resolved = await resolveForeignKey('expenses', record.categoryId);
-      mapped.categoryId = resolved;
-      mapped.category_id = resolved ? resolved.split('|')[0] : null;
-      mapped.itemId = resolved ? resolved.split('|')[1] : null;
-      mapped.item_id = mapped.itemId;
+      mapped.category_id = await resolveLocalCategoryIdToRemote(record.category_id, record.user_id);
+      mapped.item_id = await resolveLocalItemIdToRemote(record.item_id, record.user_id);
       break;
     }
     default:

@@ -326,8 +326,36 @@ db.version(8)
       "id,tableName,status,createdAt,attempts,error",
   });
 
+function isValidUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value));
+}
+
+async function cleanupLegacyCategories() {
+  try {
+    const categories = await db.expenseCategories.toArray();
+    const stableNames = new Set(
+      categories
+        .filter(c => c.defaultKey && typeof c.id === 'string' && !isValidUuid(c.id))
+        .map(c => c.name)
+    );
+
+    const toDelete = categories.filter(c => {
+      return !c.defaultKey && isValidUuid(c.id) && stableNames.has(c.name);
+    });
+
+    if (toDelete.length) {
+      await db.expenseCategories.bulkDelete(toDelete.map(c => c.id));
+      console.log('[Dexie] Removed legacy UUID categories:', toDelete.map(c => c.id));
+    }
+  } catch (error) {
+    console.error('[Dexie] Legacy category cleanup error:', error);
+  }
+}
+
 db.open().then(() => {
   console.log('[Dexie] PayanamDB opened, version:', db.verno);
+  window.payanamDB = db;
+  cleanupLegacyCategories();
 }).catch((err) => {
   console.error('[Dexie] PayanamDB open error:', err);
 });

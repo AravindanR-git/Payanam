@@ -112,7 +112,7 @@ const CategoryRepository = {
 
     console.log('[CategoryRepository] createCategory: Dexie add success, id=', category.id);
 
-    enqueueSync("expenseCategories", category.id, "CREATE", category);
+    await enqueueSync("expenseCategories", category.id, "CREATE", category);
 
     console.log('[CategoryRepository] createCategory: enqueued sync, online=', navigator.onLine);
 
@@ -138,7 +138,7 @@ const CategoryRepository = {
 
     const updated = await db.expenseCategories.get(id);
 
-    enqueueSync("expenseCategories", id, "UPDATE", updatePayload);
+    await enqueueSync("expenseCategories", id, "UPDATE", updatePayload);
 
     if (navigator.onLine && updated) {
       uploadEntity('expenseCategories', updated).catch((error) => {
@@ -152,7 +152,7 @@ const CategoryRepository = {
   async deleteCategory(id) {
     await db.expenseCategories.delete(id);
 
-    enqueueSync("expenseCategories", id, "DELETE", { id });
+    await enqueueSync("expenseCategories", id, "DELETE", { id });
 
     if (navigator.onLine) {
       deleteEntity('expenseCategories', id).catch((error) => {
@@ -183,7 +183,7 @@ const CategoryRepository = {
 
     await db.expenseCategories.update(categoryId, updatePayload);
 
-    enqueueSync("expenseCategories", categoryId, "UPDATE", updatePayload);
+    await enqueueSync("expenseCategories", categoryId, "UPDATE", updatePayload);
 
     if (navigator.onLine) {
       const updated = await db.expenseCategories.get(categoryId);

@@ -1,6 +1,7 @@
 const defaultCategories = [
   {
     id: "transport",
+    defaultKey: "transport",
     name: "Transport",
     icon: "Car",
     color: "#2563EB",
@@ -13,6 +14,7 @@ const defaultCategories = [
 
   {
     id: "food",
+    defaultKey: "food",
     name: "Food",
     icon: "UtensilsCrossed",
     color: "#F97316",
@@ -25,6 +27,7 @@ const defaultCategories = [
 
   {
     id: "stay",
+    defaultKey: "stay",
     name: "Accommodation",
     icon: "Hotel",
     color: "#14B8A6",
@@ -37,6 +40,7 @@ const defaultCategories = [
 
   {
     id: "shopping",
+    defaultKey: "shopping",
     name: "Shopping",
     icon: "ShoppingBag",
     color: "#EC4899",
@@ -49,6 +53,7 @@ const defaultCategories = [
 
   {
     id: "medical",
+    defaultKey: "medical",
     name: "Medical",
     icon: "Cross",
     color: "#DC2626",
@@ -61,6 +66,7 @@ const defaultCategories = [
 
   {
     id: "temple",
+    defaultKey: "temple",
     name: "Temple",
     icon: "Landmark",
     color: "#7C3AED",
@@ -73,6 +79,7 @@ const defaultCategories = [
 
   {
     id: "donation",
+    defaultKey: "donation",
     name: "Donation",
     icon: "HeartHandshake",
     color: "#EAB308",
@@ -85,6 +92,7 @@ const defaultCategories = [
 
   {
     id: "entertainment",
+    defaultKey: "entertainment",
     name: "Entertainment",
     icon: "PartyPopper",
     color: "#8B5CF6",
@@ -97,6 +105,7 @@ const defaultCategories = [
 
   {
     id: "misc",
+    defaultKey: "misc",
     name: "Miscellaneous",
     icon: "Package",
     color: "#6B7280",

@@ -2,6 +2,7 @@ const defaultItems = [
 
   {
     id: "fuel",
+    defaultKey: "fuel",
     categoryId: "transport",
     name: "Fuel",
     image: "fuel.jpg",
@@ -10,6 +11,7 @@ const defaultItems = [
 
   {
     id: "diesel",
+    defaultKey: "diesel",
     categoryId: "transport",
     name: "Diesel",
     image: "diesel.jpg",
@@ -18,6 +20,7 @@ const defaultItems = [
 
   {
     id: "toll",
+    defaultKey: "toll",
     categoryId: "transport",
     name: "Toll",
     image: "toll.jpg",
@@ -26,6 +29,7 @@ const defaultItems = [
 
   {
     id: "parking",
+    defaultKey: "parking",
     categoryId: "transport",
     name: "Parking",
     image: "parking.jpg",
@@ -34,6 +38,7 @@ const defaultItems = [
 
   {
     id: "breakfast",
+    defaultKey: "breakfast",
     categoryId: "food",
     name: "Breakfast",
     image: "breakfast.jpg",
@@ -42,6 +47,7 @@ const defaultItems = [
 
   {
     id: "lunch",
+    defaultKey: "lunch",
     categoryId: "food",
     name: "Lunch",
     image: "lunch.jpg",
@@ -50,6 +56,7 @@ const defaultItems = [
 
   {
     id: "tea",
+    defaultKey: "tea",
     categoryId: "food",
     name: "Tea",
     image: "tea.jpg",
@@ -58,6 +65,7 @@ const defaultItems = [
 
   {
     id: "dinner",
+    defaultKey: "dinner",
     categoryId: "food",
     name: "Dinner",
     image: "dinner.jpg",
@@ -66,6 +74,7 @@ const defaultItems = [
 
   {
     id: "hotel",
+    defaultKey: "hotel",
     categoryId: "stay",
     name: "Hotel",
     image: "hotel.jpg",
@@ -74,6 +83,7 @@ const defaultItems = [
 
   {
     id: "shopping",
+    defaultKey: "shopping",
     categoryId: "shopping",
     name: "Shopping",
     image: "shopping.jpg",
@@ -82,6 +92,7 @@ const defaultItems = [
 
   {
     id: "medicine",
+    defaultKey: "medicine",
     categoryId: "medical",
     name: "Medicine",
     image: "medicine.jpg",
@@ -90,6 +101,7 @@ const defaultItems = [
 
   {
     id: "darshan-ticket",
+    defaultKey: "darshan-ticket",
     categoryId: "temple",
     name: "Darshan Ticket",
     displayOrder: 1,
@@ -97,6 +109,7 @@ const defaultItems = [
 
   {
     id: "pooja",
+    defaultKey: "pooja",
     categoryId: "temple",
     name: "Pooja / Archana",
     displayOrder: 2,
@@ -104,6 +117,7 @@ const defaultItems = [
 
   {
     id: "prasadam",
+    defaultKey: "prasadam",
     categoryId: "temple",
     name: "Prasadam",
     displayOrder: 3,
@@ -111,6 +125,7 @@ const defaultItems = [
 
   {
     id: "special-entry",
+    defaultKey: "special-entry",
     categoryId: "temple",
     name: "Special Entry",
     displayOrder: 4,
@@ -118,6 +133,7 @@ const defaultItems = [
 
   {
     id: "hundi",
+    defaultKey: "hundi",
     categoryId: "donation",
     name: "Hundi Donation",
     displayOrder: 1,
@@ -125,6 +141,7 @@ const defaultItems = [
 
   {
     id: "annadanam",
+    defaultKey: "annadanam",
     categoryId: "donation",
     name: "Annadanam",
     displayOrder: 2,

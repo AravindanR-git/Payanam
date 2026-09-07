@@ -51,9 +51,14 @@ function Items() {
   }, [category, navigate, loadItems]);
 
   useEffect(() => {
-    const unsubscribe = onItemChange(() => {
-      loadItems();
+    const unsubscribe = onItemChange((itemId, eventType) => {
+      console.log(`[Item UI] received item change event id=${itemId} eventType=${eventType}`);
+      console.log(`[Item UI] loadItems triggered by realtime`);
+      loadItems().then(() => {
+        console.log(`[Item UI] loadItems result count=${items.length}`);
+      });
     });
+
     return unsubscribe;
   }, [loadItems]);
 

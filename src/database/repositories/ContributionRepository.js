@@ -15,7 +15,7 @@ const ContributionRepository = {
 
     await db.contributions.add(contribution);
 
-    enqueueSync("contributions", contribution.id, "CREATE", contribution);
+    await enqueueSync("contributions", contribution.id, "CREATE", contribution);
 
     if (navigator.onLine) {
       uploadEntity('contributions', contribution).catch((error) => {

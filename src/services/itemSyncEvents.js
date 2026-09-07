@@ -8,6 +8,7 @@ export function onItemChange(callback) {
 }
 
 export function emitItemChange(itemId, eventType) {
+  console.log(`[Realtime] expenseItems emitting UI event id=${itemId} eventType=${eventType}`);
   listeners.forEach((cb) => {
     try {
       cb(itemId, eventType);

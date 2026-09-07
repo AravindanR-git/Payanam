@@ -95,6 +95,18 @@ const SyncRepository = {
     }
   },
 
+  async markBlocked(id, error = null) {
+    try {
+      await db.pendingSync.update(id, {
+        status: "BLOCKED",
+        error: error ? String(error) : null,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('[SyncRepository] markBlocked error:', error);
+    }
+  },
+
   async retryFailed() {
     try {
       await db.pendingSync.where("status").equals("FAILED").modify({
@@ -123,10 +135,11 @@ const SyncRepository = {
       const pending = await db.pendingSync.where("status").equals("PENDING").count();
       const failed = await db.pendingSync.where("status").equals("FAILED").count();
       const synced = await db.pendingSync.where("status").equals("SYNCED").count();
+      const blocked = await db.pendingSync.where("status").equals("BLOCKED").count();
 
-      return { pending, failed, synced };
+      return { pending, failed, synced, blocked };
     } catch {
-      return { pending: 0, failed: 0, synced: 0 };
+      return { pending: 0, failed: 0, synced: 0, blocked: 0 };
     }
   },
 

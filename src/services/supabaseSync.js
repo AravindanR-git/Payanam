@@ -168,13 +168,12 @@ export async function processPendingSupabase(entity) {
   const results = { uploaded: 0, failed: 0, skipped: 0 };
 
   for (const entry of entries) {
-    const attempts = Number(entry.attempts) || 0;
     if (entry.operation === 'DELETE') {
       const result = await deleteEntity(entity, entry.recordId);
 
       if (result.error) {
         results.failed++;
-        await SyncRepository.markFailed(entry.id, result.error);
+        await markSyncFailure(entry.id, result.error);
       } else {
         results.uploaded++;
         await SyncRepository.markSynced(entry.id);
@@ -194,7 +193,7 @@ export async function processPendingSupabase(entity) {
 
     if (result.error) {
       results.failed++;
-      await SyncRepository.markFailed(entry.id, result.error);
+      await markSyncFailure(entry.id, result.error);
     } else {
       results.uploaded++;
       await SyncRepository.markSynced(entry.id);
@@ -552,7 +551,8 @@ export function schedulePendingSupabaseSync() {
 }
 
 async function resolveRecordUserId(entity, record) {
-  if (record.userId || record.user_id) return record.userId || record.user_id;
+  const recordUserId = record.userId || record.user_id;
+  if (recordUserId && recordUserId !== 'demo-user' && isValidUuid(recordUserId)) return recordUserId;
 
   const tripId = record.tripId || record.trip_id;
   if (tripId) {
@@ -567,7 +567,26 @@ async function resolveRecordUserId(entity, record) {
     if (participant?.tripId) return (await db.trips.get(participant.tripId))?.userId || null;
   }
 
-  return null;
+  // Default categories/items are global local templates. Their cloud copies
+  // belong to whichever authenticated account is currently syncing them.
+  const { data } = await supabase.auth.getUser();
+  return data?.user?.id || recordUserId || null;
+}
+
+function isPermanentSyncError(error) {
+  const message = String(error || '');
+  return message.startsWith('PERMANENT:') ||
+    message.includes("Could not find the '") ||
+    message.includes('schema cache') ||
+    message.includes('PGRST204');
+}
+
+async function markSyncFailure(entryId, error) {
+  if (isPermanentSyncError(error)) {
+    await SyncRepository.markBlocked(entryId, error);
+  } else {
+    await SyncRepository.markFailed(entryId, error);
+  }
 }
 
 export function unsubscribeAll() {

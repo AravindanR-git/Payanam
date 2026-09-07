@@ -50,7 +50,7 @@ const TripRepository = {
 
       await db.trips.add(trip);
 
-      enqueueSync("trips", trip.id, "CREATE", trip);
+      await enqueueSync("trips", trip.id, "CREATE", trip);
     });
 
     console.log('[TripRepository] createTrip: tripId=', trip.id, 'name=', trip.tripName, 'userId=', trip.userId, 'online=', navigator.onLine);
@@ -116,7 +116,7 @@ const TripRepository = {
 
     const updatedTrip = await this.getTrip(id);
 
-    enqueueSync("trips", id, "UPDATE", { status: "COMPLETED", endedAt, endDate: endedAt });
+    await enqueueSync("trips", id, "UPDATE", { status: "COMPLETED", endedAt, endDate: endedAt });
 
     console.log('[TripRepository] endTrip: tripId=', id, 'online=', navigator.onLine);
 
@@ -194,7 +194,7 @@ const TripRepository = {
 
     await db.transaction("rw", db.trips, async () => {
       for (const cloudTrip of data) {
-        const mapped = mapSupabaseRowToLocalRow('trips', cloudTrip);
+        const mapped = await mapSupabaseRowToLocalRow('trips', cloudTrip);
         const localTrip = localMap.get(mapped.id);
         const cloudUpdatedAt = new Date(mapped.updatedAt).getTime();
         const localUpdatedAt = localTrip ? new Date(localTrip.updatedAt).getTime() : 0;

@@ -106,7 +106,7 @@ const ItemRepository = {
 
     console.log('[ItemRepository] createItem: Dexie add success, id=', item.id);
 
-    enqueueSync("expenseItems", item.id, "CREATE", item);
+    await enqueueSync("expenseItems", item.id, "CREATE", item);
 
     console.log('[ItemRepository] createItem: enqueued sync, online=', navigator.onLine);
 
@@ -142,7 +142,7 @@ const ItemRepository = {
 
       await db.expenseItems.update(id, updatePayload);
 
-      enqueueSync("expenseItems", id, "UPDATE", updatePayload);
+      await enqueueSync("expenseItems", id, "UPDATE", updatePayload);
 
       if (navigator.onLine) {
         const updated = await db.expenseItems.get(id);
@@ -163,7 +163,7 @@ const ItemRepository = {
 
     const updated = await db.expenseItems.get(id);
 
-    enqueueSync("expenseItems", id, "UPDATE", updatePayload);
+    await enqueueSync("expenseItems", id, "UPDATE", updatePayload);
 
     if (navigator.onLine && updated) {
       uploadEntity('expenseItems', updated).catch((error) => {
@@ -177,7 +177,7 @@ const ItemRepository = {
   async deleteItem(id) {
     await db.expenseItems.delete(id);
 
-    enqueueSync("expenseItems", id, "DELETE", { id });
+    await enqueueSync("expenseItems", id, "DELETE", { id });
 
     if (navigator.onLine) {
       deleteEntity('expenseItems', id).catch((error) => {
