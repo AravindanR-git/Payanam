@@ -326,6 +326,12 @@ db.version(8)
       "id,tableName,status,createdAt,attempts,error",
   });
 
+// Stable sync-boundary identity map. It preserves legacy Dexie IDs while
+// allowing the cloud schema to keep UUID primary/foreign keys.
+db.version(9).stores({
+  syncIdMap: "key,entity,localId,cloudId",
+});
+
 function isValidUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value));
 }

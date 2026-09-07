@@ -1,9 +1,9 @@
 import SyncRepository from "../database/repositories/SyncRepository";
 import db from "../database/db";
-import { processAllPendingSupabase } from "./supabaseSync";
+import { processAllPendingSupabase, hydrateEntity } from "./supabaseSync";
+import supabase from "./supabaseClient";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
-const MAX_RETRIES = 3;
 
 function getAuthToken() {
   try {
@@ -96,6 +96,8 @@ async function resolveConflict(localRecord, remoteRecord, operation) {
   return localRecord;
 }
 
+// Retained only for the legacy Express endpoint; Supabase is the active path.
+// eslint-disable-next-line no-unused-vars
 async function pushChange(syncEntry) {
   if (!API_BASE) return false;
 
@@ -152,6 +154,7 @@ async function pushChange(syncEntry) {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 async function pullChanges(lastSyncAt = new Date(0).toISOString()) {
   if (!API_BASE) return [];
 
@@ -174,6 +177,7 @@ async function pullChanges(lastSyncAt = new Date(0).toISOString()) {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 async function applyRemoteChange(change) {
   const { model, operation, recordId, payload } = change;
   const tableName = Object.keys(TABLE_REPOSITORIES).find(
@@ -217,44 +221,22 @@ const SyncService = {
       return { pushed: 0, pulled: 0, failed: 0 };
     }
 
-    await processAllPendingSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { pushed: 0, pulled: 0, failed: 1, error: 'Authentication required' };
 
-    const pending = await SyncRepository.getPending(50);
-
-    let pushed = 0;
-    let failed = 0;
-
-    for (const entry of pending) {
-      if (entry.attempts >= MAX_RETRIES) {
-        await SyncRepository.markFailed(entry.id, "Max retries exceeded");
-
-        failed++;
-
-        continue;
-      }
-
-      const success = await pushChange(entry);
-
-      if (success) {
-        pushed++;
-      } else {
-        failed++;
-      }
-    }
-
-    const remoteChanges = await pullChanges();
-
+    // Supabase is the active sync transport. The Express fallback is retained
+    // for compatibility but must not duplicate or overwrite this queue.
+    const push = await processAllPendingSupabase();
+    const entities = ['trips', 'expenseCategories', 'expenseItems', 'participants', 'contributions', 'expenses', 'places', 'activities'];
     let pulled = 0;
-
-    for (const change of remoteChanges) {
-      await applyRemoteChange(change);
-
-      pulled++;
+    for (const entity of entities) {
+      const data = await hydrateEntity(user.id, entity);
+      pulled += data?.length || 0;
     }
 
     await SyncRepository.clearSynced();
 
-    return { pushed, pulled, failed };
+    return { pushed: push.uploaded, pulled, failed: push.failed, skipped: push.skipped };
   },
 
   async getSyncStatus() {

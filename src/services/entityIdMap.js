@@ -1,5 +1,6 @@
 import supabase from './supabaseClient';
 import db from '../database/db';
+import { generateUuid } from '../utils/uuid';
 
 const DEFAULT_CATEGORY_IDS = new Set([
   'transport',
@@ -48,6 +49,29 @@ function isValidUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value));
 }
 
+function mapKey(entity, localId) {
+  return `${entity}:${localId}`;
+}
+
+async function getCloudId(entity, localId) {
+  return (await db.syncIdMap.get(mapKey(entity, localId)))?.cloudId || null;
+}
+
+async function rememberId(entity, localId, cloudId) {
+  if (!localId || !cloudId) return cloudId;
+  await db.syncIdMap.put({
+    key: mapKey(entity, localId), entity, localId: String(localId),
+    cloudId: String(cloudId), updatedAt: new Date().toISOString(),
+  });
+  return cloudId;
+}
+
+async function cloudIdForLegacyRecord(entity, localId) {
+  const known = await getCloudId(entity, localId);
+  if (known) return known;
+  return rememberId(entity, localId, generateUuid());
+}
+
 async function getCached(entity, localId, cacheKey, resolver) {
   const entry = idCache.get(cacheKey);
   if (entry && Date.now() - entry.ts < CACHE_TTL_MS) {
@@ -77,21 +101,12 @@ async function resolveCategoryRemoteId(localId, userId = null) {
         .maybeSingle();
 
       if (data?.id) {
-        return data.id;
+        console.log(`[SyncIdentity] category local=${localId} -> cloud=${data.id}`);
+        return rememberId('expenseCategories', localId, data.id);
       }
     }
-
-    const { data } = await supabase
-      .from('expense_categories')
-      .select('id')
-      .eq('id', localId)
-      .maybeSingle();
-
-    if (data?.id) {
-      return data.id;
-    }
-
-    return localId;
+    // A semantic default key is never valid for a UUID id query or FK.
+    return null;
   });
 }
 
@@ -113,21 +128,11 @@ async function resolveItemRemoteId(localId, userId = null) {
         .maybeSingle();
 
       if (data?.id) {
-        return data.id;
+        console.log(`[SyncIdentity] item local=${localId} -> cloud=${data.id}`);
+        return rememberId('expenseItems', localId, data.id);
       }
     }
-
-    const { data } = await supabase
-      .from('expense_items')
-      .select('id')
-      .eq('id', localId)
-      .maybeSingle();
-
-    if (data?.id) {
-      return data.id;
-    }
-
-    return localId;
+    return null;
   });
 }
 
@@ -213,17 +218,17 @@ export function isDefaultItem(id) {
   return isDefaultItemId(id);
 }
 
-export async function resolveLocalToRemote(entity, localId) {
+export async function resolveLocalToRemote(entity, localId, userId = null) {
   if (!localId) return null;
   if (isValidUuid(localId)) return localId;
 
   switch (entity) {
     case 'expenseCategories':
-      return resolveCategoryRemoteId(localId);
+      return resolveCategoryRemoteId(localId, userId);
     case 'expenseItems':
-      return resolveItemRemoteId(localId);
+      return resolveItemRemoteId(localId, userId);
     default:
-      return localId;
+      return cloudIdForLegacyRecord(entity, localId);
   }
 }
 
@@ -239,7 +244,7 @@ export async function resolveRemoteToLocal(entity, remoteId, userId, extra = {})
     case 'expenseItems':
       return resolveItemLocalId(remoteId, userId, defaultKey);
     default:
-      return remoteId;
+      return (await db.syncIdMap.where('cloudId').equals(String(remoteId)).and((row) => row.entity === entity).first())?.localId || remoteId;
   }
 }
 
@@ -271,18 +276,39 @@ export async function mapLocalRecordToRemote(entity, record) {
   const mapped = { ...record };
 
   switch (entity) {
+    case 'trips':
+      mapped.id = await resolveLocalToRemote('trips', record.id, record.user_id);
+      break;
+    case 'participants':
+      mapped.id = await resolveLocalToRemote('participants', record.id, record.user_id);
+      mapped.trip_id = await resolveLocalToRemote('trips', record.trip_id, record.user_id);
+      break;
+    case 'contributions':
+      mapped.id = await resolveLocalToRemote('contributions', record.id, record.user_id);
+      mapped.trip_id = await resolveLocalToRemote('trips', record.trip_id, record.user_id);
+      mapped.participant_id = await resolveLocalToRemote('participants', record.participant_id, record.user_id);
+      break;
+    case 'places':
+      mapped.id = await resolveLocalToRemote('places', record.id, record.user_id);
+      break;
+    case 'activities':
+      mapped.id = await resolveLocalToRemote('activities', record.id, record.user_id);
+      mapped.trip_id = await resolveLocalToRemote('trips', record.trip_id, record.user_id);
+      break;
     case 'expenseCategories':
-      mapped.id = await resolveLocalToRemote('expenseCategories', record.id) || record.id;
+      mapped.id = await resolveLocalToRemote('expenseCategories', record.id, record.user_id);
       break;
     case 'expenseItems': {
       const remoteCategoryId = await resolveLocalCategoryIdToRemote(record.category_id, record.user_id);
       mapped.category_id = remoteCategoryId;
-      mapped.id = await resolveItemRemoteId(record.id, record.user_id) || record.id;
+      mapped.id = await resolveLocalToRemote('expenseItems', record.id, record.user_id);
       break;
     }
     case 'expenses': {
+      mapped.trip_id = await resolveLocalToRemote('trips', record.trip_id);
       mapped.category_id = await resolveLocalCategoryIdToRemote(record.category_id, record.user_id);
       mapped.item_id = await resolveLocalItemIdToRemote(record.item_id, record.user_id);
+      mapped.paid_by_participant_id = await resolveLocalToRemote('participants', record.paid_by_participant_id);
       break;
     }
     default:
@@ -352,9 +378,9 @@ export async function mapRemoteRowToLocal(entity, row, userId) {
       }
 
       return {
-        id: String(row.id),
+        id: await resolveRemoteToLocal('expenses', row.id, userId),
         userId: String(row.user_id || userId || ''),
-        tripId: String(row.trip_id || ''),
+        tripId: await resolveRemoteToLocal('trips', row.trip_id, userId),
         categoryId: localCategoryId || null,
         itemId: localItemId,
         categoryName: String(row.category_name ?? ''),
@@ -363,7 +389,7 @@ export async function mapRemoteRowToLocal(entity, row, userId) {
         amount: Number(row.amount || 0),
         notes: String(row.notes ?? ''),
         paymentSource: row.payment_source || 'fund',
-        paidByParticipantId: row.paid_by_participant_id || null,
+        paidByParticipantId: await resolveRemoteToLocal('participants', row.paid_by_participant_id, userId),
         latitude: row.latitude ?? null,
         longitude: row.longitude ?? null,
         locationName: String(row.location_name ?? ''),

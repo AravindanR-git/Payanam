@@ -49,9 +49,10 @@ const TripRepository = {
       }
 
       await db.trips.add(trip);
-
-      await enqueueSync("trips", trip.id, "CREATE", trip);
     });
+
+    // Keep the Dexie transaction Dexie-only; enqueueing may schedule sync work.
+    await enqueueSync("trips", trip.id, "CREATE", trip);
 
     console.log('[TripRepository] createTrip: tripId=', trip.id, 'name=', trip.tripName, 'userId=', trip.userId, 'online=', navigator.onLine);
 
@@ -192,9 +193,12 @@ const TripRepository = {
 
     console.log('[TripRepository] hydrateTripsFromSupabase: local trips before=', localTrips.length, 'cloud trips=', data.length);
 
+    // Resolve identity mappings before the Dexie transaction. Mapping may read
+    // syncIdMap, and awaiting that inside the transaction can commit it early.
+    const mappedTrips = await Promise.all(data.map((cloudTrip) => mapSupabaseRowToLocalRow('trips', cloudTrip, userId)));
+
     await db.transaction("rw", db.trips, async () => {
-      for (const cloudTrip of data) {
-        const mapped = await mapSupabaseRowToLocalRow('trips', cloudTrip);
+      for (const mapped of mappedTrips) {
         const localTrip = localMap.get(mapped.id);
         const cloudUpdatedAt = new Date(mapped.updatedAt).getTime();
         const localUpdatedAt = localTrip ? new Date(localTrip.updatedAt).getTime() : 0;

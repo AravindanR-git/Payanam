@@ -3,7 +3,6 @@ import db from '../database/db';
 import SyncRepository from '../database/repositories/SyncRepository';
 import { mapLocalRecordToRemote, mapRemoteRowToLocal, resolveLocalToRemote, resolveRemoteToLocal } from './entityIdMap';
 
-const MAX_SYNC_RETRIES = 3;
 const SYNC_COOLDOWN_MS = 2000;
 
 const recentlySynced = new Map();
@@ -71,7 +70,7 @@ export async function mapSupabaseRowToLocalRow(entity, row, userId) {
   switch (entity) {
     case 'trips':
       return {
-        id,
+        id: await resolveRemoteToLocal('trips', id, userIdStr),
         userId: userIdStr,
         tripName: String(row.trip_name ?? ''),
         tripType: String(row.trip_type ?? 'friends'),
@@ -89,9 +88,9 @@ export async function mapSupabaseRowToLocalRow(entity, row, userId) {
       return mapRemoteRowToLocal(entity, row, userIdStr);
     case 'participants':
       return {
-        id,
+        id: await resolveRemoteToLocal('participants', id, userIdStr),
         userId: userIdStr,
-        tripId: String(row.trip_id || ''),
+        tripId: await resolveRemoteToLocal('trips', row.trip_id, userIdStr),
         type: String(row.type ?? 'friend'),
         name: String(row.name ?? ''),
         adults: toNumber(row.adults, 1),
@@ -103,17 +102,17 @@ export async function mapSupabaseRowToLocalRow(entity, row, userId) {
       };
     case 'contributions':
       return {
-        id,
+        id: await resolveRemoteToLocal('contributions', id, userIdStr),
         userId: userIdStr,
-        tripId: String(row.trip_id || ''),
-        participantId: String(row.participant_id || ''),
+        tripId: await resolveRemoteToLocal('trips', row.trip_id, userIdStr),
+        participantId: await resolveRemoteToLocal('participants', row.participant_id, userIdStr),
         amount: toNumber(row.amount, 0),
         createdAt,
         updatedAt,
       };
     case 'places':
       return {
-        id,
+        id: await resolveRemoteToLocal('places', id, userIdStr),
         userId: userIdStr,
         name: String(row.name ?? ''),
         displayOrder: toNumber(row.display_order, 0),
@@ -122,9 +121,9 @@ export async function mapSupabaseRowToLocalRow(entity, row, userId) {
       };
     case 'activities':
       return {
-        id,
+        id: await resolveRemoteToLocal('activities', id, userIdStr),
         userId: userIdStr,
-        tripId: String(row.trip_id || ''),
+        tripId: await resolveRemoteToLocal('trips', row.trip_id, userIdStr),
         type: String(row.type ?? 'expense'),
         createdAt,
         updatedAt,
@@ -347,6 +346,10 @@ export async function uploadEntity(entity, record) {
   }
 
   const remotePayload = await mapLocalRecordToRemote(entity, mappedPayload);
+  const invalidColumn = validateRemotePayload(entity, remotePayload, mappedPayload);
+  if (invalidColumn) {
+    return { data: null, error: `PERMANENT: Invalid ${invalidColumn} mapping for ${entity} ${record.id}` };
+  }
 
   const { data, error } = await supabase
     .from(tableName)
@@ -421,12 +424,20 @@ export async function hydrateEntity(userId, entity) {
 
   const localRecords = await db.table(entity).toArray();
   const localMap = new Map(localRecords.map((r) => [r.id, r]));
+  // Mapping may resolve persisted IDs or default keys. Do it before opening a
+  // Dexie transaction: Supabase/Dexie awaits inside a transaction cause
+  // PrematureCommitError.
+  const mappedRows = await Promise.all(data.map((row) => mapSupabaseRowToLocalRow(entity, row, userId)));
+  const outstandingIds = new Set((await Promise.all(
+    mappedRows.map(async (mapped) => (
+      (await SyncRepository.hasOutstandingForRecord(entity, mapped.id)) ? mapped.id : null
+    )),
+  )).filter(Boolean));
 
   await db.transaction('rw', db.table(entity), async () => {
-    for (const cloudRow of data) {
-      const mapped = await mapSupabaseRowToLocalRow(entity, cloudRow, userId);
+    for (const mapped of mappedRows) {
       const localRecord = localMap.get(mapped.id);
-      const hasOutstandingLocalChange = localRecord && await SyncRepository.hasOutstandingForRecord(entity, mapped.id);
+      const hasOutstandingLocalChange = localRecord && outstandingIds.has(mapped.id);
       const cloudUpdatedAt = new Date(mapped.updatedAt).getTime();
       const localUpdatedAt = localRecord ? new Date(localRecord.updatedAt).getTime() : 0;
 
@@ -443,6 +454,21 @@ export async function hydrateEntity(userId, entity) {
   });
 
   return data;
+}
+
+function validateRemotePayload(entity, payload, original) {
+  const uuidFields = {
+    trips: ['id'], participants: ['id', 'trip_id'], contributions: ['id', 'trip_id', 'participant_id'],
+    expenseCategories: ['id'], expenseItems: ['id', 'category_id'],
+    expenses: ['id', 'trip_id'],
+  };
+  for (const field of uuidFields[entity] || []) {
+    if (!isValidUuid(payload[field])) return field;
+  }
+  for (const field of ['category_id', 'item_id', 'paid_by_participant_id']) {
+    if (original[field] && !isValidUuid(payload[field])) return field;
+  }
+  return null;
 }
 
 export function subscribeToEntity(entity, userId, callback) {
@@ -566,6 +592,10 @@ async function resolveRecordUserId(entity, record) {
     if (participant?.userId) return participant.userId;
     if (participant?.tripId) return (await db.trips.get(participant.tripId))?.userId || null;
   }
+
+  // A root demo trip has no trustworthy owner relationship. Preserve its queue
+  // entry as BLOCKED rather than silently assigning it to the current account.
+  if (recordUserId === 'demo-user') return recordUserId;
 
   // Default categories/items are global local templates. Their cloud copies
   // belong to whichever authenticated account is currently syncing them.
