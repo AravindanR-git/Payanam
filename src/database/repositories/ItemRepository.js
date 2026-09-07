@@ -2,6 +2,7 @@ import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 import { enqueueSync } from "../../services/syncEnqueue";
 import { uploadEntity, deleteEntity, hydrateEntity } from "../../services/supabaseSync";
+import { resolveLocalToRemote } from "../../services/entityIdMap";
 
 const ItemRepository = {
   async getItems(categoryId) {
@@ -175,12 +176,14 @@ const ItemRepository = {
   },
 
   async deleteItem(id) {
+    const remoteId = await resolveLocalToRemote('expenseItems', id);
+
     await db.expenseItems.delete(id);
 
-    await enqueueSync("expenseItems", id, "DELETE", { id });
+    await enqueueSync("expenseItems", id, "DELETE", { id, remoteId });
 
     if (navigator.onLine) {
-      deleteEntity('expenseItems', id).catch((error) => {
+      deleteEntity('expenseItems', remoteId || id).catch((error) => {
         console.error('[ItemRepository] deleteItem error:', error);
       });
     }

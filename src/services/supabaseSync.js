@@ -168,7 +168,8 @@ export async function processPendingSupabase(entity) {
 
   for (const entry of entries) {
     if (entry.operation === 'DELETE') {
-      const result = await deleteEntity(entity, entry.recordId);
+      const deleteId = entry.payload?.remoteId || entry.recordId;
+      const result = await deleteEntity(entity, deleteId);
 
       if (result.error) {
         results.failed++;
