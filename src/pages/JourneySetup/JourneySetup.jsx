@@ -83,6 +83,7 @@ function JourneySetup() {
         for (const member of friends) {
           await ParticipantRepository.createParticipant({
             tripId: trip.id,
+            userId: trip.userId,
             type: "friend",
             name: member.name,
             adults: 1,
@@ -94,6 +95,7 @@ function JourneySetup() {
         for (const family of families) {
           await ParticipantRepository.createParticipant({
             tripId: trip.id,
+            userId: trip.userId,
             type: "family",
             name: family.familyName,
             adults: family.adults,

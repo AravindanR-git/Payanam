@@ -74,6 +74,7 @@ function ThiruPayanam() {
       await ParticipantRepository.createMany(
         pilgrims.map((pilgrim) => ({
           tripId: trip.id,
+          userId: trip.userId,
           type: "pilgrim",
           name: pilgrim.familyName,
           adults: pilgrim.adults,

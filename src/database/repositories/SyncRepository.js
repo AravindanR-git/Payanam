@@ -58,6 +58,18 @@ const SyncRepository = {
     }
   },
 
+  async hasOutstandingForRecord(tableName, recordId) {
+    try {
+      const rows = await db.pendingSync
+        .where("status")
+        .anyOf("PENDING", "FAILED")
+        .toArray();
+      return rows.some((row) => row.tableName === tableName && row.recordId === recordId);
+    } catch {
+      return false;
+    }
+  },
+
   async markSynced(id) {
     try {
       await db.pendingSync.update(id, {
@@ -80,6 +92,18 @@ const SyncRepository = {
       });
     } catch (error) {
       console.error('[SyncRepository] markFailed error:', error);
+    }
+  },
+
+  async retryFailed() {
+    try {
+      await db.pendingSync.where("status").equals("FAILED").modify({
+        status: "PENDING",
+        error: null,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch {
+      // The queue is best-effort; a later online event can retry again.
     }
   },
 

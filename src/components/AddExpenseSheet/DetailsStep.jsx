@@ -157,6 +157,7 @@ function DetailsStep({
     } else {
       await ExpenseRepository.createExpense({
         tripId: trip.id,
+        userId: trip.userId,
 
         categoryId: category.id,
 

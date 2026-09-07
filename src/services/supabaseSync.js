@@ -1,12 +1,14 @@
 import supabase from './supabaseClient';
 import db from '../database/db';
 import SyncRepository from '../database/repositories/SyncRepository';
+import { mapLocalRecordToRemote, mapRemoteRowToLocal, resolveLocalToRemote, resolveRemoteToLocal } from './entityIdMap';
 
 const MAX_SYNC_RETRIES = 3;
 const SYNC_COOLDOWN_MS = 2000;
 
 const recentlySynced = new Map();
 const entitySubscriptions = new Map();
+let scheduledSync = null;
 
 function markRecentlySynced(entityKey, recordId) {
   const key = `${entityKey}:${recordId}`;
@@ -60,9 +62,9 @@ function toNumber(value, fallback = 0) {
   return isNaN(n) ? fallback : n;
 }
 
-export function mapSupabaseRowToLocalRow(entity, row) {
+export async function mapSupabaseRowToLocalRow(entity, row, userId) {
   const id = String(row.id);
-  const userId = String(row.user_id || '');
+  const userIdStr = String(row.user_id || userId || '');
   const createdAt = toIsoString(row.created_at) || new Date().toISOString();
   const updatedAt = toIsoString(row.updated_at) || createdAt;
 
@@ -70,7 +72,7 @@ export function mapSupabaseRowToLocalRow(entity, row) {
     case 'trips':
       return {
         id,
-        userId,
+        userId: userIdStr,
         tripName: String(row.trip_name ?? ''),
         tripType: String(row.trip_type ?? 'friends'),
         status: String(row.status ?? 'ACTIVE'),
@@ -82,39 +84,14 @@ export function mapSupabaseRowToLocalRow(entity, row) {
         updatedAt,
       };
     case 'expenseCategories':
-      return {
-        id,
-        userId,
-        name: String(row.name ?? ''),
-        icon: String(row.icon ?? '📂'),
-        color: String(row.color ?? '#666666'),
-        tripTypes: Array.isArray(row.trip_types) ? row.trip_types : [],
-        displayOrder: toNumber(row.display_order, 0),
-        isDefault: Boolean(row.is_default),
-        usageCount: toNumber(row.usage_count, 0),
-        lastUsed: toIsoString(row.last_used),
-        createdAt,
-        updatedAt,
-      };
     case 'expenseItems':
-      return {
-        id,
-        categoryId: String(row.category_id || ''),
-        userId,
-        name: String(row.name ?? ''),
-        icon: String(row.icon ?? '📦'),
-        displayOrder: toNumber(row.display_order, 0),
-        isDefault: Boolean(row.is_default),
-        usageCount: toNumber(row.usage_count, 0),
-        lastUsed: toIsoString(row.last_used),
-        createdAt,
-        updatedAt,
-      };
+    case 'expenses':
+      return mapRemoteRowToLocal(entity, row, userIdStr);
     case 'participants':
       return {
         id,
+        userId: userIdStr,
         tripId: String(row.trip_id || ''),
-        userId,
         type: String(row.type ?? 'friend'),
         name: String(row.name ?? ''),
         adults: toNumber(row.adults, 1),
@@ -127,41 +104,17 @@ export function mapSupabaseRowToLocalRow(entity, row) {
     case 'contributions':
       return {
         id,
+        userId: userIdStr,
         tripId: String(row.trip_id || ''),
         participantId: String(row.participant_id || ''),
-        userId,
         amount: toNumber(row.amount, 0),
         createdAt,
         updatedAt,
       };
-    case 'expenses': {
-      const mapped = {
-        id,
-        tripId: String(row.trip_id || ''),
-        userId,
-        categoryId: row.category_id ? String(row.category_id) : null,
-        itemId: row.item_id ? String(row.item_id) : null,
-        categoryName: String(row.category_name ?? ''),
-        selectedItems: row.selected_items || [],
-        expenseTime: toIsoString(row.expense_time),
-        amount: toNumber(row.amount, 0),
-        notes: String(row.notes ?? ''),
-        paymentSource: String(row.payment_source ?? 'fund'),
-        paidByParticipantId: row.paid_by_participant_id ? String(row.paid_by_participant_id) : null,
-        latitude: row.latitude != null ? toNumber(row.latitude) : null,
-        longitude: row.longitude != null ? toNumber(row.longitude) : null,
-        locationName: String(row.location_name ?? ''),
-        locationSource: String(row.location_source ?? 'none'),
-        syncStatus: 'SYNCED',
-        createdAt,
-        updatedAt,
-      };
-      return mapped;
-    }
     case 'places':
       return {
         id,
-        userId,
+        userId: userIdStr,
         name: String(row.name ?? ''),
         displayOrder: toNumber(row.display_order, 0),
         createdAt,
@@ -170,14 +123,14 @@ export function mapSupabaseRowToLocalRow(entity, row) {
     case 'activities':
       return {
         id,
+        userId: userIdStr,
         tripId: String(row.trip_id || ''),
-        userId,
         type: String(row.type ?? 'expense'),
         createdAt,
         updatedAt,
       };
     default:
-      return { id, userId, createdAt, updatedAt };
+      return { id, userId: userIdStr, createdAt, updatedAt };
   }
 }
 
@@ -216,11 +169,6 @@ export async function processPendingSupabase(entity) {
 
   for (const entry of entries) {
     const attempts = Number(entry.attempts) || 0;
-    if (attempts >= MAX_SYNC_RETRIES) {
-      results.skipped++;
-      continue;
-    }
-
     if (entry.operation === 'DELETE') {
       const result = await deleteEntity(entity, entry.recordId);
 
@@ -262,7 +210,7 @@ function isValidUuid(value) {
 
 export async function uploadEntity(entity, record) {
   const tableName = getTableName(entity);
-  const userId = record.userId || record.user_id;
+  const userId = await resolveRecordUserId(entity, record);
 
   console.log(`[SupabaseSync] uploadEntity called: entity=${entity}, id=${record.id}, userId=${userId}, table=${tableName}`);
 
@@ -271,15 +219,10 @@ export async function uploadEntity(entity, record) {
     return { error: `Missing userId for ${entity} ${record.id}` };
   }
 
-  const isDemoUser = userId === 'demo-user' || !String(userId).includes('-');
+  const isDemoUser = userId === 'demo-user' || !isValidUuid(userId);
   if (isDemoUser) {
     console.error(`[SupabaseSync] uploadEntity DEMO USER REJECTED for ${entity} ${record.id}, userId=${userId}`);
     return { error: `Invalid userId for ${entity} ${record.id}: must be authenticated Supabase user` };
-  }
-
-  if (!isValidUuid(record.id)) {
-    console.error(`[SupabaseSync] uploadEntity INVALID UUID for ${entity} ${record.id}`);
-    return { error: `Invalid UUID format for ${entity} ${record.id}: ${record.id}. This record was created before UUID adoption and cannot be uploaded to Supabase.` };
   }
 
   markRecentlySynced(entity, record.id);
@@ -289,7 +232,7 @@ export async function uploadEntity(entity, record) {
     case 'trips':
       mappedPayload = {
         id: record.id,
-        user_id: record.userId,
+        user_id: userId,
         trip_name: record.tripName,
         trip_type: record.tripType,
         status: record.status,
@@ -304,7 +247,7 @@ export async function uploadEntity(entity, record) {
     case 'expenseCategories':
       mappedPayload = {
         id: record.id,
-        user_id: record.userId,
+        user_id: userId,
         name: record.name,
         icon: record.icon,
         color: record.color,
@@ -321,7 +264,7 @@ export async function uploadEntity(entity, record) {
       mappedPayload = {
         id: record.id,
         category_id: record.categoryId,
-        user_id: record.userId,
+        user_id: userId,
         name: record.name,
         icon: record.icon,
         display_order: toNumber(record.displayOrder, 0),
@@ -336,7 +279,7 @@ export async function uploadEntity(entity, record) {
       mappedPayload = {
         id: record.id,
         trip_id: record.tripId,
-        user_id: record.userId,
+        user_id: userId,
         type: record.type,
         name: record.name,
         adults: toNumber(record.adults, 1),
@@ -352,7 +295,7 @@ export async function uploadEntity(entity, record) {
         id: record.id,
         trip_id: record.tripId,
         participant_id: record.participantId,
-        user_id: record.userId,
+        user_id: userId,
         amount: toNumber(record.amount, 0),
         created_at: toIsoString(record.createdAt),
         updated_at: toIsoString(record.updatedAt || record.createdAt),
@@ -362,7 +305,7 @@ export async function uploadEntity(entity, record) {
       mappedPayload = {
         id: record.id,
         trip_id: record.tripId,
-        user_id: record.userId,
+        user_id: userId,
         category_id: record.categoryId,
         item_id: record.itemId,
         category_name: record.categoryName,
@@ -383,7 +326,7 @@ export async function uploadEntity(entity, record) {
     case 'places':
       mappedPayload = {
         id: record.id,
-        user_id: record.userId,
+        user_id: userId,
         name: record.name,
         display_order: toNumber(record.displayOrder, 0),
         created_at: toIsoString(record.createdAt),
@@ -394,7 +337,7 @@ export async function uploadEntity(entity, record) {
       mappedPayload = {
         id: record.id,
         trip_id: record.tripId,
-        user_id: record.userId,
+        user_id: userId,
         type: record.type || 'expense',
         created_at: toIsoString(record.createdAt),
         updated_at: toIsoString(record.updatedAt || record.createdAt),
@@ -404,9 +347,11 @@ export async function uploadEntity(entity, record) {
       return { error: `Unknown entity: ${entity}` };
   }
 
+  const remotePayload = await mapLocalRecordToRemote(entity, mappedPayload);
+
   const { data, error } = await supabase
     .from(tableName)
-    .upsert(mappedPayload)
+    .upsert(remotePayload)
     .select();
 
   if (error) {
@@ -418,7 +363,7 @@ export async function uploadEntity(entity, record) {
       details: error.details,
       hint: error.hint,
       code: error.code,
-      payload: mappedPayload,
+      payload: remotePayload,
     });
     return { data: null, error: error.message || String(error) };
   }
@@ -480,12 +425,13 @@ export async function hydrateEntity(userId, entity) {
 
   await db.transaction('rw', db.table(entity), async () => {
     for (const cloudRow of data) {
-      const mapped = mapSupabaseRowToLocalRow(entity, cloudRow);
+      const mapped = await mapSupabaseRowToLocalRow(entity, cloudRow, userId);
       const localRecord = localMap.get(mapped.id);
+      const hasOutstandingLocalChange = localRecord && await SyncRepository.hasOutstandingForRecord(entity, mapped.id);
       const cloudUpdatedAt = new Date(mapped.updatedAt).getTime();
       const localUpdatedAt = localRecord ? new Date(localRecord.updatedAt).getTime() : 0;
 
-      if (localRecord && cloudUpdatedAt <= localUpdatedAt) {
+      if (hasOutstandingLocalChange || (localRecord && cloudUpdatedAt <= localUpdatedAt)) {
         continue;
       }
 
@@ -519,15 +465,17 @@ export function subscribeToEntity(entity, userId, callback) {
       schema: 'public',
       table: tableName,
       filter: `user_id=eq.${userId}`,
-    }, (payload) => {
+    }, async (payload) => {
       console.log(`[Realtime] ${entity} ${payload.eventType} id=${payload.new?.id || payload.old?.id}`);
 
       if (payload.eventType === 'DELETE') {
         const deletedId = String(payload.old?.id || payload.record?.id || '');
         if (deletedId && isValidUuid(deletedId)) {
-          db.table(entity).delete(deletedId).then(() => {
-            console.log(`[Realtime] ${entity} Dexie delete success id=${deletedId}`);
-            callback(deletedId, 'DELETE');
+          const localId = await resolveRemoteToLocal(entity, deletedId, userId);
+          const deleteId = localId || deletedId;
+          db.table(entity).delete(deleteId).then(() => {
+            console.log(`[Realtime] ${entity} Dexie delete success id=${deleteId}`);
+            callback(deleteId, 'DELETE');
           }).catch((error) => {
             console.error(`[SupabaseSync] Realtime DELETE ${entity} failed:`, error);
           });
@@ -535,7 +483,7 @@ export function subscribeToEntity(entity, userId, callback) {
         return;
       }
 
-      const mapped = mapSupabaseRowToLocalRow(entity, payload.new);
+      const mapped = await mapSupabaseRowToLocalRow(entity, payload.new, userId);
 
       const nonCloneable = validateRecordForDexie(mapped);
       if (nonCloneable) {
@@ -593,6 +541,35 @@ export async function processAllPendingSupabase() {
   return totalResults;
 }
 
+export function schedulePendingSupabaseSync() {
+  if (scheduledSync || typeof navigator === 'undefined' || !navigator.onLine) return;
+  scheduledSync = setTimeout(async () => {
+    scheduledSync = null;
+    await SyncRepository.retryFailed();
+    await processAllPendingSupabase();
+    await SyncRepository.clearSynced();
+  }, 0);
+}
+
+async function resolveRecordUserId(entity, record) {
+  if (record.userId || record.user_id) return record.userId || record.user_id;
+
+  const tripId = record.tripId || record.trip_id;
+  if (tripId) {
+    const trip = await db.trips.get(tripId);
+    if (trip?.userId) return trip.userId;
+  }
+
+  const participantId = record.participantId || record.participant_id;
+  if (entity === 'contributions' && participantId) {
+    const participant = await db.participants.get(participantId);
+    if (participant?.userId) return participant.userId;
+    if (participant?.tripId) return (await db.trips.get(participant.tripId))?.userId || null;
+  }
+
+  return null;
+}
+
 export function unsubscribeAll() {
   for (const [, channel] of entitySubscriptions) {
     supabase.removeChannel(channel);
@@ -603,16 +580,20 @@ export function unsubscribeAll() {
 export async function deleteEntity(entity, recordId) {
   const tableName = getTableName(entity);
 
-  markRecentlySynced(entity, recordId);
+  const remoteId = await resolveLocalToRemote(entity, recordId);
+  const deleteId = remoteId || recordId;
+
+  markRecentlySynced(entity, deleteId);
 
   const { error } = await supabase
     .from(tableName)
     .delete()
-    .eq('id', recordId);
+    .eq('id', deleteId);
 
   if (error) {
     console.error(`[SupabaseSync] delete ${entity} FAILED:`, {
       id: recordId,
+      remoteId: deleteId,
       table: tableName,
       message: error.message,
       details: error.details,
@@ -624,6 +605,7 @@ export async function deleteEntity(entity, recordId) {
 
   console.log(`[SupabaseSync] delete ${entity} SUCCESS:`, {
     id: recordId,
+    remoteId: deleteId,
     table: tableName,
   });
 

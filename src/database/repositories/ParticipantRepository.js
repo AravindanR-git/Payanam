@@ -14,7 +14,7 @@ const ParticipantRepository = {
 
     await db.participants.add(participant);
 
-    enqueueSync("participants", participant.id, "CREATE", participant);
+    await enqueueSync("participants", participant.id, "CREATE", participant);
 
     if (navigator.onLine) {
       uploadEntity('participants', participant).catch((error) => {
@@ -36,7 +36,7 @@ const ParticipantRepository = {
     await db.participants.bulkAdd(data);
 
     for (const participant of data) {
-      enqueueSync("participants", participant.id, "CREATE", participant);
+      await enqueueSync("participants", participant.id, "CREATE", participant);
 
       if (navigator.onLine) {
         uploadEntity('participants', participant).catch((error) => {
@@ -61,7 +61,7 @@ const ParticipantRepository = {
 
     const updated = await db.participants.get(id);
 
-    enqueueSync("participants", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
+    await enqueueSync("participants", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
 
     if (navigator.onLine && updated) {
       uploadEntity('participants', updated).catch((error) => {
@@ -73,7 +73,7 @@ const ParticipantRepository = {
   async deleteParticipant(id) {
     await db.participants.delete(id);
 
-    enqueueSync("participants", id, "DELETE", { id });
+    await enqueueSync("participants", id, "DELETE", { id });
   },
 
   async hydrateParticipantsFromSupabase(userId) {

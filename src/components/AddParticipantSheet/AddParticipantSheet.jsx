@@ -130,6 +130,7 @@ function AddParticipantSheet({
       await ParticipantRepository.createParticipant({
 
         tripId: trip.id,
+        userId: trip.userId,
 
         ...data,
 

@@ -38,7 +38,7 @@ const ExpenseRepository = {
       await CategoryRepository.markUsed(expense.categoryId);
     }
 
-    enqueueSync("expenses", expense.id, "CREATE", expense);
+    await enqueueSync("expenses", expense.id, "CREATE", expense);
 
     if (navigator.onLine) {
       uploadEntity('expenses', expense).catch((error) => {
@@ -107,7 +107,7 @@ const ExpenseRepository = {
 
     const updated = await db.expenses.get(id);
 
-    enqueueSync("expenses", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
+    await enqueueSync("expenses", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
 
     if (navigator.onLine && updated) {
       uploadEntity('expenses', updated).catch((error) => {
@@ -121,7 +121,7 @@ const ExpenseRepository = {
   async deleteExpense(id) {
     await db.expenses.delete(id);
 
-    enqueueSync("expenses", id, "DELETE", { id });
+    await enqueueSync("expenses", id, "DELETE", { id });
   },
 
   async hydrateExpensesFromSupabase(userId) {
