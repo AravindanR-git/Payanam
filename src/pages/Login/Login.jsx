@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import useLanguage from "../../i18n/useLanguage";
 import { useAuth } from "../../contexts/useAuth";
 import supabase from "../../services/supabaseClient";
+import PayanamLogo from "../../components/PayanamBrand/PayanamLogo";
 
 function Login() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>Payanam</h1>
+          <PayanamLogo className="auth-brand-logo" />
           <p>{t("signInToContinue")}</p>
         </div>
 

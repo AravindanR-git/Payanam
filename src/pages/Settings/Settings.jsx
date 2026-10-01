@@ -113,8 +113,9 @@ function Settings() {
       </section>
 
       <SettingsGroup title={t("expenseSetup")}>
+        <NavigationRow icon={<FolderOpen size={19} />} label="Transport" onClick={() => navigate("/settings/transport")} />
         <NavigationRow icon={<FolderOpen size={19} />} label={t("categories")} onClick={() => navigate("/categories")} />
-        <NavigationRow icon={<UtensilsCrossed size={19} />} label={t("expenseItems")} onClick={() => navigate("/items")} />
+        <NavigationRow icon={<UtensilsCrossed size={19} />} label={t("expenseItems")} onClick={() => navigate("/categories")} />
         <NavigationRow icon={<MapPin size={19} />} label={t("places")} onClick={() => navigate("/places")} />
       </SettingsGroup>
 

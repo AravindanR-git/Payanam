@@ -19,6 +19,9 @@ export default function Overview() {
     health: "Healthy",
     healthClass: "healthy",
     recentExpenses: [],
+    trip: null,
+    transportCalculation: null,
+    irumudiSummary: null,
   });
 
   useEffect(() => {
@@ -55,6 +58,9 @@ export default function Overview() {
       health,
       healthClass,
       recentExpenses: overview.recentExpenses,
+      trip: overview.trip,
+      transportCalculation: overview.transportCalculation,
+      irumudiSummary: overview.irumudiSummary,
     });
   }
 
@@ -85,6 +91,8 @@ export default function Overview() {
         </div>
 
       </div>
+
+      {summary.irumudiSummary && <section className="budget-card irumudi-report-card"><h3>Sabarimala Irumudi Collection <small>Separate from Trip Expenses</small></h3><div><span>Amount per person</span><strong>₹{summary.irumudiSummary.amountPerPerson.toLocaleString("en-IN")}</strong></div><div><span>Participants</span><strong>{summary.irumudiSummary.totalParticipants}</strong></div><div><span>Expected Irumudi</span><strong>₹{summary.irumudiSummary.expectedTotal.toLocaleString("en-IN")}</strong></div><div><span>Collected</span><strong>₹{summary.irumudiSummary.collectedAmount.toLocaleString("en-IN")}</strong></div><div><span>Pending</span><strong>₹{summary.irumudiSummary.pendingAmount.toLocaleString("en-IN")} ({summary.irumudiSummary.pendingCount})</strong></div>{summary.irumudiSummary.pendingPeople.length > 0 && <p>Pending Participants: {summary.irumudiSummary.pendingPeople.map((person) => `${person.participantName} (${person.memberType} ${person.memberIndex})`).join(", ")}</p>}</section>}
 
       <div className="budget-card">
 
@@ -118,6 +126,18 @@ export default function Overview() {
         <span>{t("health")}</span>
         <h3>{summary.health}</h3>
       </div>
+      {summary.trip?.status === "COMPLETED" && summary.trip?.transport && summary.transportCalculation && <section className="budget-card">
+        <h3>Vehicle expense / transport calculation</h3>
+        <p><strong>{summary.trip.transport.name}</strong>{summary.trip.transport.driverName ? ` · ${summary.trip.transport.driverName}` : ""}</p>
+        {summary.trip.transport.pricingMode === "package" ? <p>Package price: ₹{summary.transportCalculation.base.toLocaleString("en-IN")}</p> : <p>Distance {summary.transportCalculation.distance} km × ₹{Number(summary.trip.transport.ratePerKm || 0).toLocaleString("en-IN")}/km = ₹{summary.transportCalculation.base.toLocaleString("en-IN")}</p>}
+        <p>Included actual expenses: −₹{summary.transportCalculation.includedAmount.toLocaleString("en-IN")}</p>
+        {summary.transportCalculation.includedExpenses.map((expense) => <p key={expense.id}>Included · {(expense.selectedItems || []).map((item) => item.name).join(", ") || "Transport expense"}: ₹{Number(expense.amount || 0).toLocaleString("en-IN")}</p>)}
+        <p>Driver beta: ₹{summary.transportCalculation.driverBeta.toLocaleString("en-IN")}</p>
+        <p><strong>Vehicle payable: ₹{summary.transportCalculation.payable.toLocaleString("en-IN")}</strong></p>
+        <p>Additional transport expenses: ₹{summary.transportCalculation.additionalTransport.toLocaleString("en-IN")}</p>
+        {summary.transportCalculation.additionalExpenses.map((expense) => <p key={expense.id}>Additional · {(expense.selectedItems || []).map((item) => item.name).join(", ") || "Transport expense"}: ₹{Number(expense.amount || 0).toLocaleString("en-IN")}</p>)}
+        <p><strong>Final transport cost: ₹{summary.transportCalculation.finalCost.toLocaleString("en-IN")}</strong></p>
+      </section>}
       <div className="recent-card">
 
         <div className="card-header">

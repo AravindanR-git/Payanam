@@ -100,7 +100,7 @@ function Items() {
 
       <button
         className="back-btn"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/categories")}
       >
         <ArrowLeft size={20} />
       </button>

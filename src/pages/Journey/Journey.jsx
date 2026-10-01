@@ -10,6 +10,8 @@ import {
   Users,
   FileText,
   Home,
+  CarFront,
+  MapPin,
 } from "lucide-react";
 
 import Button from "../../components/Button/Button";
@@ -18,7 +20,10 @@ import TripRepository from "../../database/repositories/TripRepository";
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
 import ExpenseRepository from "../../database/repositories/ExpenseRepository";
 import AddExpenseSheet from "../../components/AddExpenseSheet/AddExpenseSheet";
+import AddPlaceSheet from "../../components/AddPlaceSheet/AddPlaceSheet";
 import useLanguage from "../../i18n/useLanguage";
+import { getTransportEstimate } from "../../utils/transportAccounting";
+import { getIrumudiSummary, isSabarimalaTrip } from "../../utils/irumudi";
 
 function Journey() {
   const navigate = useNavigate();
@@ -37,22 +42,20 @@ function Journey() {
 
   const [showExpenseSheet, setShowExpenseSheet] =
     useState(false);
+  const [showPlaceSheet, setShowPlaceSheet] = useState(false);
   const [editingExpense, setEditingExpense] =
     useState(null);
   const [isEndingJourney, setIsEndingJourney] =
     useState(false);
   const [isLoadingJourney, setIsLoadingJourney] =
     useState(true);
+  const transport = trip?.transport || null;
+  const estimate = transport ? getTransportEstimate(transport, expenses) : null;
+  const irumudiSummary = getIrumudiSummary(trip, participants);
 
   useEffect(() => {
     loadJourney();
   }, []);
-
-  useEffect(() => {
-    if (trip && !showExpenseSheet && !editingExpense) {
-      setShowExpenseSheet(true);
-    }
-  }, [trip]);
 
   const loadJourney = async () => {
     try {
@@ -61,6 +64,11 @@ function Journey() {
 
       if (!activeTrip) {
         navigate("/");
+        return;
+      }
+
+      if (isSabarimalaTrip(activeTrip) && !activeTrip.irumudi?.setupCompleted) {
+        navigate(`/irumudi/${activeTrip.id}`, { replace: true });
         return;
       }
 
@@ -108,34 +116,24 @@ function Journey() {
       0
     );
 
-  const spent =
-    expenses.reduce(
-      (sum, expense) =>
-        sum +
-        Number(expense.amount || 0),
-      0
-    );
+  const spent = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
 
   const balance = collected - spent;
 
-  const endJourney = async () => {
-    const confirmed = window.confirm(
-      t("endJourney")
-    );
-
-    if (!confirmed) return;
-
+  const finishTrip = async () => {
     setIsEndingJourney(true);
+    try { await TripRepository.endTrip(trip.id); navigate("/history"); }
+    catch (error) { console.error(error); alert(t("unableToEndJourney")); }
+    finally { setIsEndingJourney(false); }
+  };
 
-    try {
-      await TripRepository.endTrip(trip.id);
-      navigate("/history");
-    } catch (error) {
-      console.error(error);
-      alert(t("unableToEndJourney"));
-    } finally {
-      setIsEndingJourney(false);
+  const endJourney = () => {
+    if (transport && transport.settlementStatus !== "FINALIZED") {
+      alert("Transport settlement is not completed. Review and finalize it before ending the journey.");
+      navigate(`/journey/${trip.id}/transport`);
+      return;
     }
+    if (window.confirm(t("endJourney"))) finishTrip();
   };
 
   const totalPeople =
@@ -233,9 +231,13 @@ function Journey() {
         </div>
       </div>
 
+      {isSabarimalaTrip(trip) && irumudiSummary && <section className="journey-irumudi-summary"><div><h3>Sabarimala Irumudi Collection</h3><small>Tracked separately from Trip Expenses</small></div><p>Collected <strong>₹{irumudiSummary.collectedAmount.toLocaleString("en-IN")}</strong> of ₹{irumudiSummary.expectedTotal.toLocaleString("en-IN")}</p><p>{irumudiSummary.paidCount} / {irumudiSummary.totalParticipants} paid · {irumudiSummary.pendingCount} pending</p><button type="button" onClick={() => navigate(`/irumudi/${trip.id}`)}>Manage Irumudi</button></section>}
+
       <h3>{t("quickActions")}</h3>
 
       <div className="quick-grid">
+        {transport && <button type="button" className="quick-card vehicle-quick-card" onClick={() => navigate(`/journey/${trip.id}/transport`)}>{transport.photo ? <img src={transport.photo} alt="" /> : <CarFront size={28} />}<span>Vehicle</span><strong>{transport.name}</strong><small>{transport.settlementStatus === "FINALIZED" ? "Vehicle settlement finalized" : "Vehicle expense likely"}</small><strong>₹{transport.settlementStatus === "FINALIZED" ? Number(transport.finalPayable || 0).toLocaleString("en-IN") : estimate.payable.toLocaleString("en-IN")}{transport.settlementStatus === "FINALIZED" ? "" : " approx."}</strong></button>}
+        <button type="button" className="quick-card" onClick={() => setShowPlaceSheet(true)}><MapPin size={28} /><span>Add Place</span></button>
         <div
           className="quick-card"
           onClick={() =>
@@ -332,6 +334,7 @@ function Journey() {
         expense={editingExpense}
         onExpenseSaved={loadJourney}
       />
+      <AddPlaceSheet isOpen={showPlaceSheet} onClose={() => setShowPlaceSheet(false)} trip={trip} onSaved={loadJourney} />
     </div>
   );
 }

@@ -73,26 +73,114 @@
   font-weight: 600;
 }
 
-.payment-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+.paid-by-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.payment-btn {
-  height: 48px;
+.paid-by-group:last-child {
+  margin-bottom: 0;
+}
+
+.group-label {
+  display: block;
+  width: 100%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.paid-by-btn {
+  flex: 1 1 auto;
+  min-width: 120px;
+  height: 44px;
   border: 1px solid #dbe4f0;
   background: #f8fafc;
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: .25s;
+  transition: .2s;
+  font-size: 14px;
   font-weight: 600;
+  color: #374151;
+  padding: 0 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.payment-btn.active {
+.paid-by-btn:hover {
+  background: #e0e7ff;
+  border-color: #93c5fd;
+}
+
+.paid-by-btn.active {
   background: #2563eb;
   color: white;
   border-color: #2563eb;
+}
+
+.donor-btn {
+  border-left: 3px solid #f59e0b;
+}
+
+.remaining-section {
+  margin-top: 14px;
+  padding: 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+}
+
+.remaining-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.remaining-info span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.remaining-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.remaining-source-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.remaining-source-btn {
+  flex: 1;
+  height: 38px;
+  border: 1px solid #fcd34d;
+  background: #fef3c7;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400e;
+  transition: .2s;
+}
+
+.remaining-source-btn:hover {
+  background: #fde68a;
+}
+
+.remaining-source-btn.active {
+  background: #f59e0b;
+  color: white;
+  border-color: #f59e0b;
 }
 
 .location-header {
@@ -146,6 +234,50 @@
 
 .delete-btn {
   margin-top: 12px;
+}
+
+.remaining-select-btn {
+  width: 100%;
+  height: 44px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: .15s;
+}
+
+.remaining-select-btn:hover {
+  background: #e0e7ff;
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+
+.remaining-selected {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #fcd34d;
+  background: #fef3c7;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: .15s;
+}
+
+.remaining-selected:hover {
+  background: #fde68a;
 }
 
 @media (max-width: 600px) {

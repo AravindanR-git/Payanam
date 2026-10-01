@@ -295,6 +295,12 @@ export async function mapLocalRecordToRemote(entity, record) {
       mapped.id = await resolveLocalToRemote('activities', record.id, record.user_id);
       mapped.trip_id = await resolveLocalToRemote('trips', record.trip_id, record.user_id);
       break;
+    case 'expensePaymentAllocations':
+      mapped.id = await resolveLocalToRemote('expensePaymentAllocations', record.id, record.user_id);
+      mapped.expense_id = await resolveLocalToRemote('expenses', record.expense_id, record.user_id);
+      mapped.participant_id = record.participant_id ? await resolveLocalToRemote('participants', record.participant_id, record.user_id) : null;
+      mapped.donor_id = record.donor_id ? await resolveLocalToRemote('contributions', record.donor_id, record.user_id) : null;
+      break;
     case 'expenseCategories':
       mapped.id = await resolveLocalToRemote('expenseCategories', record.id, record.user_id);
       break;
@@ -309,6 +315,8 @@ export async function mapLocalRecordToRemote(entity, record) {
       mapped.category_id = await resolveLocalCategoryIdToRemote(record.category_id, record.user_id);
       mapped.item_id = await resolveLocalItemIdToRemote(record.item_id, record.user_id);
       mapped.paid_by_participant_id = await resolveLocalToRemote('participants', record.paid_by_participant_id);
+      mapped.paid_by_donor_id = record.paid_by_donor_id ? await resolveLocalToRemote('contributions', record.paid_by_donor_id, record.user_id) : null;
+      mapped.transport_settlement_trip_id = record.transport_settlement_trip_id ? await resolveLocalToRemote('trips', record.transport_settlement_trip_id, record.user_id) : null;
       break;
     }
     default:
@@ -390,10 +398,25 @@ export async function mapRemoteRowToLocal(entity, row, userId) {
         notes: String(row.notes ?? ''),
         paymentSource: row.payment_source || 'fund',
         paidByParticipantId: await resolveRemoteToLocal('participants', row.paid_by_participant_id, userId),
+        paidByDonorId: row.paid_by_donor_id ? await resolveRemoteToLocal('contributions', row.paid_by_donor_id, userId) : null,
         latitude: row.latitude ?? null,
         longitude: row.longitude ?? null,
         locationName: String(row.location_name ?? ''),
         locationSource: row.location_source || 'none',
+        transportSettlement: Boolean(row.transport_settlement),
+        transportSettlementTripId: row.transport_settlement_trip_id || null,
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || row.created_at || new Date().toISOString(),
+      };
+    }
+    case 'expensePaymentAllocations': {
+      return {
+        id: await resolveRemoteToLocal('expensePaymentAllocations', row.id, userId),
+        expenseId: await resolveRemoteToLocal('expenses', row.expense_id, userId),
+        paymentSourceType: String(row.payment_source_type || 'fund'),
+        participantId: row.participant_id ? await resolveRemoteToLocal('participants', row.participant_id, userId) : null,
+        donorId: row.donor_id || null,
+        amount: Number(row.amount || 0),
         createdAt: row.created_at || new Date().toISOString(),
         updatedAt: row.updated_at || row.created_at || new Date().toISOString(),
       };

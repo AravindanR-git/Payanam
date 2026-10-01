@@ -21,6 +21,14 @@
   margin-bottom: 28px;
 }
 
+.auth-brand-logo {
+  width: min(100%, 208px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  margin: 0 auto 12px;
+  border-radius: 24px;
+}
+
 .auth-header h1 {
   margin: 0 0 8px;
   font-size: 28px;

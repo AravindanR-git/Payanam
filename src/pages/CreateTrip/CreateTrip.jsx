@@ -1,14 +1,26 @@
 import "./CreateTrip.css";
 import { motion } from "framer-motion";
 import { Users, Landmark, ArrowLeft } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useLanguage from "../../i18n/useLanguage";
 import TripRepository from "../../database/repositories/TripRepository";
+import PayanamTransition from "../../components/PayanamBrand/PayanamTransition";
 
 function CreateTrip() {
     const navigate = useNavigate();
     const { t } = useLanguage();
+    const [journeyTarget, setJourneyTarget] = useState("");
+
+    useEffect(() => {
+        if (!journeyTarget) return undefined;
+        const timeout = window.setTimeout(() => navigate(journeyTarget), 700);
+        return () => window.clearTimeout(timeout);
+    }, [journeyTarget, navigate]);
+
+    const startJourneyFlow = (target) => {
+        if (!journeyTarget) setJourneyTarget(target);
+    };
 
     useEffect(() => {
         const guardActiveJourney = async () => {
@@ -46,7 +58,7 @@ function CreateTrip() {
 
                 <div
                     className="trip-card"
-                    onClick={() => navigate("/journey-setup")}
+                    onClick={() => startJourneyFlow("/journey-setup")}
                 >
 
                     <Users size={40} />
@@ -61,7 +73,7 @@ function CreateTrip() {
 
                 <div
                     className="trip-card"
-                    onClick={() => navigate("/thiru-payanam")}
+                    onClick={() => startJourneyFlow("/thiru-payanam")}
                 >
 
                     <Landmark size={40} />
@@ -75,6 +87,7 @@ function CreateTrip() {
                 </div>
 
             </div>
+            {journeyTarget && <PayanamTransition />}
 
         </motion.div>
 

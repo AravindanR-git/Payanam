@@ -20,5 +20,27 @@
     "initialContribution": 2500,
     "updatedAt": "2026-08-14T09:19:51.250Z",
     "createdAt": "2026-08-14T09:19:51.250Z"
+  },
+  {
+    "id": "01M07ED20TASNJAYS0R1HN48F1",
+    "createdAt": "2026-08-17T14:10:21.308Z",
+    "updatedAt": "2026-08-17T14:10:21.308Z",
+    "tripId": "01M07ED20ERYZN1TEREVSZJ9VG",
+    "type": "friend",
+    "name": "A",
+    "adults": 1,
+    "children": 0,
+    "initialContribution": 5000
+  },
+  {
+    "id": "01M07ED20TASNJAYS0R1HN48F1",
+    "createdAt": "2026-08-17T14:10:21.680Z",
+    "updatedAt": "2026-08-17T14:10:21.680Z",
+    "tripId": "01M07ED20ERYZN1TEREVSZJ9VG",
+    "type": "friend",
+    "name": "A",
+    "adults": 1,
+    "children": 0,
+    "initialContribution": 5000
   }
 ]

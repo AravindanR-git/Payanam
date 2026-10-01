@@ -1,0 +1,23 @@
+{
+  "name": "Payanam",
+  "short_name": "Payanam",
+  "description": "Plan journeys and manage trip expenses with Payanam.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09263c",
+  "theme_color": "#09263c",
+  "icons": [
+    {
+      "src": "/branding/payanam-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/branding/payanam-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

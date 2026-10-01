@@ -1,6 +1,6 @@
 import "./JourneySetup.css";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -17,6 +17,7 @@ import TripRepository from "../../database/repositories/TripRepository";
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
 import useLanguage from "../../i18n/useLanguage";
 import { useAuth } from "../../contexts/useAuth";
+import TransportSetup from "../../components/TransportSetup/TransportSetup";
 
 function JourneySetup() {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ function JourneySetup() {
   const [friends, setFriends] = useState([]);
 
   const [families, setFamilies] = useState([]);
+  const transportSetupRef = useRef(null);
 
   const totalCollected =
     tripGroup === "friends"
@@ -72,11 +74,14 @@ function JourneySetup() {
     }
 
     try {
+      const transport = await transportSetupRef.current.getSnapshot();
+      if (transport === false) return;
       const trip = await TripRepository.createTrip({
         userId: user?.id,
         tripName,
         tripType: tripGroup,
         defaultContributionPerPerson,
+        transport,
       });
 
       if (tripGroup === "friends") {
@@ -137,6 +142,8 @@ function JourneySetup() {
             setTripName(e.target.value)
           }
         />
+
+        <TransportSetup ref={transportSetupRef} userId={user?.id} />
 
         <Input
           label={t("contributionPerPerson")}

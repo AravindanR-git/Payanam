@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import Button from "../Button/Button";
-import { MapPinned } from "lucide-react";
+import { MapPinned, Heart, User } from "lucide-react";
 import "./DetailsStep.css";
 
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
+import ContributionRepository from "../../database/repositories/ContributionRepository";
 import ExpenseRepository from "../../database/repositories/ExpenseRepository";
 import LocationService from "../../services/LocationService";
 import BottomSheet from "../BottomSheet/BottomSheet";
 import ManualLocationSheet from "./ManualLocationSheet";
+import SearchablePicker from "../SearchablePicker/SearchablePicker";
 import useLanguage from "../../i18n/useLanguage";
+import { availableDonors } from "../../utils/donorBalance";
 
 function DetailsStep({
   trip,
@@ -33,17 +36,25 @@ function DetailsStep({
   const [participants, setParticipants] =
     useState([]);
 
-  const [paymentSource, setPaymentSource] =
-    useState(
-      expense?.paymentSource || "fund"
-    );
+  const [donors, setDonors] = useState([]);
 
-  const [
-    paidByParticipantId,
-    setPaidByParticipantId,
-  ] = useState(
-    expense?.paidByParticipantId || ""
+  const [paidBy, setPaidBy] = useState(
+    expense?.paidByDonorId
+      ? { type: "donor", id: expense.paidByDonorId }
+      : expense?.paidByParticipantId
+        ? { type: "participant", id: expense.paidByParticipantId }
+        : { type: "fund", id: null }
   );
+
+  const [remainingSource, setRemainingSource] = useState("fund");
+  const [remainingParticipantId, setRemainingParticipantId] = useState("");
+  const [remainingDonorId, setRemainingDonorId] = useState("");
+
+  const [showPersonPicker, setShowPersonPicker] = useState(false);
+  const [showDonorPicker, setShowDonorPicker] = useState(false);
+  const [showRemainingPersonPicker, setShowRemainingPersonPicker] = useState(false);
+  const [showRemainingDonorPicker, setShowRemainingDonorPicker] = useState(false);
+
   const [location, setLocation] = useState({
     latitude: expense?.latitude ?? null,
     longitude: expense?.longitude ?? null,
@@ -56,6 +67,7 @@ function DetailsStep({
 
   useEffect(() => {
     loadParticipants();
+    loadDonors();
 
     if (!expense) {
       loadLocation();
@@ -69,11 +81,58 @@ function DetailsStep({
       );
 
     setParticipants(list);
-
-    if (!expense && list.length > 0) {
-      setPaidByParticipantId(list[0].id);
-    }
   };
+
+  const loadDonors = async () => {
+    const contributions =
+      await ContributionRepository.getByTrip(
+        trip.id
+      );
+
+    const donorContributions = contributions.filter(
+      (c) => c.donorName
+    );
+
+    const donorsWithAvailability = await Promise.all(
+      donorContributions.map(async (donor) => {
+        const available =
+          await ExpenseRepository.getDonorAvailability(
+            donor.id,
+            { excludeExpenseId: expense?.id || null }
+          );
+
+        return {
+          ...donor,
+          available,
+        };
+      })
+    );
+
+    setDonors(availableDonors(donorsWithAvailability));
+  };
+
+  const selectedDonor = () => {
+    if (paidBy.type !== "donor" || !paidBy.id) return null;
+    return donors.find((d) => d.id === paidBy.id);
+  };
+
+  const donorPaymentAmount = () => {
+    const total = Number(amount || 0);
+    const donor = selectedDonor();
+    if (!donor) return 0;
+    return Math.min(total, donor.available);
+  };
+
+  const remainingAmount = () => {
+    return Number(amount || 0) - donorPaymentAmount();
+  };
+
+  const isDonorInsufficient = () => {
+    const donor = selectedDonor();
+    if (!donor) return false;
+    return donor.available < Number(amount || 0);
+  };
+
   const loadLocation = async (forceRefresh = false) => {
     setLoadingLocation(true);
 
@@ -124,6 +183,89 @@ function DetailsStep({
       return;
     }
 
+    const numericAmount = Number(amount);
+    // Re-read balances at commit time so a stale sheet cannot spend money
+    // another allocation has already consumed.
+    const freshContributions = await ContributionRepository.getByTrip(trip.id);
+    const freshDonors = await Promise.all(freshContributions.filter((c) => c.donorName).map(async (item) => ({
+      ...item,
+      available: await ExpenseRepository.getDonorAvailability(item.id, { excludeExpenseId: expense?.id || null }),
+    })));
+    const currentAvailableDonors = availableDonors(freshDonors);
+    setDonors(currentAvailableDonors);
+    const donor = paidBy.type === "donor" ? currentAvailableDonors.find((item) => item.id === paidBy.id) : null;
+    if (paidBy.type === "donor" && !donor) {
+      alert("This donor has no remaining balance. Select another payment source.");
+      setPaidBy({ type: "fund", id: null });
+      return;
+    }
+    const donorAmount = donor ? Math.min(numericAmount, donor.available) : 0;
+    const remaining = numericAmount - donorAmount;
+
+    if (donor && donor.available < numericAmount && remaining > 0) {
+      if (remainingSource === "participant" && !remainingParticipantId) {
+        alert(t("selectPersonForRemaining") || "Select a person for the remaining amount.");
+        return;
+      }
+      if (remainingSource === "donor" && !remainingDonorId) {
+        alert(t("selectDonorForRemaining") || "Select a donor for the remaining amount.");
+        return;
+      }
+    }
+
+    const finalAllocations = [];
+
+    if (donor && donorAmount > 0) {
+      finalAllocations.push({
+        paymentSourceType: "donor",
+        donorId: donor.id,
+        participantId: null,
+        amount: donorAmount,
+      });
+    }
+
+    if (remaining > 0) {
+      if (remainingSource === "fund") {
+        finalAllocations.push({
+          paymentSourceType: "fund",
+          participantId: null,
+          donorId: null,
+          amount: remaining,
+        });
+      } else if (remainingSource === "participant") {
+        finalAllocations.push({
+          paymentSourceType: "participant",
+          participantId: remainingParticipantId,
+          donorId: null,
+          amount: remaining,
+        });
+      } else if (remainingSource === "donor") {
+        const remainingDonor = currentAvailableDonors.find((d) => d.id === remainingDonorId && d.id !== donor?.id);
+        if (!remainingDonor) {
+          alert("Select a different donor with an available balance for the remaining amount.");
+          return;
+        }
+        const remainingDonorAmount = remainingDonor
+          ? Math.min(remaining, remainingDonor.available)
+          : remaining;
+        finalAllocations.push({
+          paymentSourceType: "donor",
+          donorId: remainingDonorId,
+          participantId: null,
+          amount: remainingDonorAmount,
+        });
+      }
+    }
+
+    if (finalAllocations.length === 0) {
+      finalAllocations.push({
+        paymentSourceType: "fund",
+        participantId: null,
+        donorId: null,
+        amount: numericAmount,
+      });
+    }
+
     const expenseData = {
       latitude: location.latitude,
       longitude: location.longitude,
@@ -136,41 +278,49 @@ function DetailsStep({
               location.latitude !== null
             ? "gps"
             : "none",
-      amount: Number(amount),
+      amount: numericAmount,
 
       notes,
 
-      paymentSource,
+      paymentSource:
+        finalAllocations.length === 1
+          ? finalAllocations[0].paymentSourceType
+          : "split",
 
       paidByParticipantId:
-        paymentSource === "participant"
-          ? paidByParticipantId
-          : null,
+        finalAllocations.find(
+          (a) => a.paymentSourceType === "participant"
+        )?.participantId || null,
+
+      paidByDonorId:
+        finalAllocations.find(
+          (a) => a.paymentSourceType === "donor"
+        )?.donorId || null,
+
+      allocations: finalAllocations,
     };
 
-    if (expense) {
-      console.log("Updating expense:", expenseData);
-      await ExpenseRepository.updateExpense(
-        expense.id,
-        expenseData
-      );
-    } else {
-      await ExpenseRepository.createExpense({
-        tripId: trip.id,
-        userId: trip.userId,
-
-        categoryId: category.id,
-
-        categoryName: category.name,
-
-        selectedItems,
-
-        expenseTime:
-          new Date().toISOString(),
-
-        ...expenseData,
-      });
+    try {
+      if (expense) {
+        await ExpenseRepository.updateExpense(expense.id, expenseData);
+      } else {
+        await ExpenseRepository.createExpense({
+          tripId: trip.id,
+          userId: trip.userId,
+          categoryId: category.id,
+          categoryName: category.name,
+          selectedItems,
+          expenseTime: new Date().toISOString(),
+          ...expenseData,
+        });
+      }
+    } catch (error) {
+      alert(error?.message || "Donor balance changed. Please review the allocation and try again.");
+      await loadDonors();
+      return;
     }
+
+    await loadDonors();
 
     if (onSaved) {
       await onSaved();
@@ -277,69 +427,153 @@ function DetailsStep({
 
       <div className="details-card">
         <h4 className="section-title">
-          {t("moneySource")}
+          {t("paidBy")}
         </h4>
 
-        <div className="payment-toggle">
+        <div className="paid-by-group">
           <button
             type="button"
-            className={`payment-btn ${paymentSource === "fund"
-              ? "active"
-              : ""
-              }`}
-            onClick={() =>
-              setPaymentSource("fund")
-            }
+            className={`paid-by-btn ${paidBy.type === "fund" ? "active" : ""}`}
+            onClick={() => {
+              setPaidBy({ type: "fund", id: null });
+              setRemainingSource("fund");
+            }}
           >
             💰 {t("tripFund")}
           </button>
-
-          <button
-            type="button"
-            className={`payment-btn ${paymentSource ===
-              "participant"
-              ? "active"
-              : ""
-              }`}
-            onClick={() =>
-              setPaymentSource(
-                "participant"
-              )
-            }
-          >
-            👤 {t("paidByPerson")}
-          </button>
         </div>
 
-        {paymentSource ===
-          "participant" && (
-            <select
-              className="sheet-input"
-              value={
-                paidByParticipantId
-              }
-              onChange={(e) =>
-                setPaidByParticipantId(
-                  e.target.value
-                )
-              }
+        <div className="paid-by-group">
+          <span className="group-label">{t("persons")}</span>
+          {paidBy.type === "participant" && paidBy.id ? (
+            <button
+              type="button"
+              className={`paid-by-btn active ${paidBy.type === "participant" ? "active" : ""}`}
+              onClick={() => setShowPersonPicker(true)}
             >
-              {participants.map(
-                (participant) => (
-                  <option
-                    key={
-                      participant.id
-                    }
-                    value={
-                      participant.id
-                    }
-                  >
-                    {participant.name}
-                  </option>
-                )
-              )}
-            </select>
+              👤 {participants.find((p) => p.id === paidBy.id)?.name || "Selected"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="paid-by-btn"
+              onClick={() => setShowPersonPicker(true)}
+            >
+              <User size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+              {t("selectPerson") || "Select Person"}
+            </button>
           )}
+        </div>
+
+        {donors.length > 0 && (
+          <div className="paid-by-group">
+            <span className="group-label">{t("donors")}</span>
+            {paidBy.type === "donor" && paidBy.id ? (
+              <button
+                type="button"
+                className={`paid-by-btn active donor-btn ${paidBy.type === "donor" ? "active" : ""}`}
+                onClick={() => setShowDonorPicker(true)}
+              >
+                <Heart size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
+                {donors.find((d) => d.id === paidBy.id)?.donorName || "Selected"} — ₹
+                {Number(donors.find((d) => d.id === paidBy.id)?.available || 0).toLocaleString("en-IN")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="paid-by-btn donor-btn"
+                onClick={() => setShowDonorPicker(true)}
+              >
+                <Heart size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
+                {t("selectDonor") || "Select Donor"}
+              </button>
+            )}
+          </div>
+        )}
+
+        {isDonorInsufficient() && remainingAmount() > 0 && (
+          <div className="remaining-section">
+            <div className="remaining-info">
+              <span>{t("donorPays") || "Donor pays"}: ₹{donorPaymentAmount().toLocaleString("en-IN")}</span>
+              <span className="remaining-amount">{t("remaining")}: ₹{remainingAmount().toLocaleString("en-IN")}</span>
+            </div>
+
+            <div className="remaining-source-toggle">
+              <button
+                type="button"
+                className={`remaining-source-btn ${remainingSource === "fund" ? "active" : ""}`}
+                onClick={() => {
+                  setRemainingSource("fund");
+                  setRemainingParticipantId("");
+                  setRemainingDonorId("");
+                }}
+              >
+                💰 {t("tripFund")}
+              </button>
+              <button
+                type="button"
+                className={`remaining-source-btn ${remainingSource === "participant" ? "active" : ""}`}
+                onClick={() => setRemainingSource("participant")}
+              >
+                👤 {t("person")}
+              </button>
+              {donors.length > 0 && (
+                <button
+                  type="button"
+                  className={`remaining-source-btn ${remainingSource === "donor" ? "active" : ""}`}
+                  onClick={() => setRemainingSource("donor")}
+                >
+                  <Heart size={14} style={{ marginRight: 4, verticalAlign: "middle" }} />
+                  {t("donor")}
+                </button>
+              )}
+            </div>
+
+{remainingSource === "participant" && (
+              remainingParticipantId ? (
+                <button
+                  type="button"
+                  className="remaining-selected"
+                  onClick={() => setShowRemainingPersonPicker(true)}
+                >
+                  👤 {participants.find((p) => p.id === remainingParticipantId)?.name || "Selected"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="remaining-select-btn"
+                  onClick={() => setShowRemainingPersonPicker(true)}
+                >
+                  <User size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
+                  {t("selectPerson") || "Select Person"}
+                </button>
+              )
+            )}
+
+            {remainingSource === "donor" && (
+              remainingDonorId ? (
+                <button
+                  type="button"
+                  className="remaining-selected"
+                  onClick={() => setShowRemainingDonorPicker(true)}
+                >
+                  <Heart size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
+                  {donors.find((d) => d.id === remainingDonorId)?.donorName || "Selected"} — ₹
+                  {Number(donors.find((d) => d.id === remainingDonorId)?.available || 0).toLocaleString("en-IN")}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="remaining-select-btn"
+                  onClick={() => setShowRemainingDonorPicker(true)}
+                >
+                  <Heart size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
+                  {t("selectDonor") || "Select Donor"}
+                </button>
+              )
+            )}
+          </div>
+        )}
       </div>
       <div className="details-card">
         <div
@@ -442,6 +676,72 @@ function DetailsStep({
           });
           setShowManualLocation(false);
         }}
+      />
+
+      <SearchablePicker
+        isOpen={showPersonPicker}
+        onClose={() => setShowPersonPicker(false)}
+        title={t("selectPerson") || "Select Person"}
+        searchPlaceholder={t("searchPersons") || "Search people..."}
+        items={participants}
+        getItemKey={(p) => p.id}
+        getItemLabel={(p) => p.name}
+        getItemSecondary={() => undefined}
+        getItemIcon={() => <User size={18} />}
+        currentSelectedKey={paidBy.type === "participant" ? paidBy.id : null}
+        onSelect={(p) => {
+          setPaidBy({ type: "participant", id: p.id });
+          setRemainingSource("fund");
+        }}
+        emptyText={t("noPersons") || "No persons found"}
+      />
+
+      <SearchablePicker
+        isOpen={showDonorPicker}
+        onClose={() => setShowDonorPicker(false)}
+        title={t("selectDonor") || "Select Donor"}
+        searchPlaceholder={t("searchDonors") || "Search donors..."}
+        items={donors}
+        getItemKey={(d) => d.id}
+        getItemLabel={(d) => d.donorName}
+        getItemSecondary={(d) => `₹${Number(d.available || 0).toLocaleString("en-IN")} available`}
+        getItemIcon={() => <Heart size={18} />}
+        currentSelectedKey={paidBy.type === "donor" ? paidBy.id : null}
+        onSelect={(d) => {
+          setPaidBy({ type: "donor", id: d.id });
+          setRemainingSource("fund");
+        }}
+        emptyText={t("noDonors") || "No donors found"}
+      />
+
+      <SearchablePicker
+        isOpen={showRemainingPersonPicker}
+        onClose={() => setShowRemainingPersonPicker(false)}
+        title={t("selectPerson") || "Select Person"}
+        searchPlaceholder={t("searchPersons") || "Search people..."}
+        items={participants}
+        getItemKey={(p) => p.id}
+        getItemLabel={(p) => p.name}
+        getItemSecondary={() => undefined}
+        getItemIcon={() => <User size={18} />}
+        currentSelectedKey={remainingParticipantId || null}
+        onSelect={(p) => setRemainingParticipantId(p.id)}
+        emptyText={t("noPersons") || "No persons found"}
+      />
+
+      <SearchablePicker
+        isOpen={showRemainingDonorPicker}
+        onClose={() => setShowRemainingDonorPicker(false)}
+        title={t("selectDonor") || "Select Donor"}
+        searchPlaceholder={t("searchDonors") || "Search donors..."}
+        items={donors.filter((d) => d.id !== (paidBy.type === "donor" ? paidBy.id : null))}
+        getItemKey={(d) => d.id}
+        getItemLabel={(d) => d.donorName}
+        getItemSecondary={(d) => `₹${Number(d.available || 0).toLocaleString("en-IN")} available`}
+        getItemIcon={() => <Heart size={18} />}
+        currentSelectedKey={remainingDonorId || null}
+        onSelect={(d) => setRemainingDonorId(d.id)}
+        emptyText={t("noDonors") || "No donors found"}
       />
     </div>
   );

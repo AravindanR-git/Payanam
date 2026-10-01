@@ -1,6 +1,6 @@
 import SyncRepository from "../database/repositories/SyncRepository";
 import db from "../database/db";
-import { processAllPendingSupabase, hydrateEntity } from "./supabaseSync";
+import { syncAccountData } from "./supabaseSync";
 import supabase from "./supabaseClient";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
@@ -46,6 +46,9 @@ async function getRepository(tableName) {
         break;
       case "places":
         TABLE_REPOSITORIES[tableName] = (await import("../database/repositories/PlaceRepository.js")).default;
+        break;
+      case "transports":
+        TABLE_REPOSITORIES[tableName] = (await import("../database/repositories/TransportRepository.js")).default;
         break;
       case "activities":
         TABLE_REPOSITORIES[tableName] = (await import("../database/repositories/ActivityRepository.js")).default;
@@ -226,17 +229,7 @@ const SyncService = {
 
     // Supabase is the active sync transport. The Express fallback is retained
     // for compatibility but must not duplicate or overwrite this queue.
-    const push = await processAllPendingSupabase();
-    const entities = ['trips', 'expenseCategories', 'expenseItems', 'participants', 'contributions', 'expenses', 'places', 'activities'];
-    let pulled = 0;
-    for (const entity of entities) {
-      const data = await hydrateEntity(user.id, entity);
-      pulled += data?.length || 0;
-    }
-
-    await SyncRepository.clearSynced();
-
-    return { pushed: push.uploaded, pulled, failed: push.failed, skipped: push.skipped };
+    return await syncAccountData(user.id);
   },
 
   async getSyncStatus() {
@@ -244,7 +237,7 @@ const SyncService = {
   },
 
   async startAutoSync() {
-    console.log('[SyncService] Express sync is disabled. Supabase sync is handled by AuthContext and repository background uploads.');
+    console.log('[SyncService] Supabase sync is run at sign-in, network recovery, and app foreground.');
     return () => {};
   },
 };

@@ -251,3 +251,7 @@
     font-size:14px;
 
 }
+.vehicle-likely{display:flex;align-items:center;gap:10px;margin:14px 0;padding:12px 16px;border-radius:12px;background:#fff7df;color:#7a4d00}.vehicle-likely span{display:grid;gap:2px}.vehicle-likely small{font-size:12px}.quick-card{border:0;font:inherit;color:inherit}
+.vehicle-quick-card img{width:68px;height:52px;object-fit:cover;border-radius:10px}
+.settlement-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:16px;background:#0008}.settlement-dialog{width:min(100%,520px);max-height:90vh;overflow:auto;padding:20px;border-radius:18px;background:var(--surface-primary,#fff);display:grid;gap:12px}.settlement-dialog h2,.settlement-dialog h3{margin:0}.settlement-dialog label{display:grid;gap:6px}.settlement-dialog input{padding:11px;border:1px solid #ccc;border-radius:9px;font:inherit}.settlement-actions{display:flex;justify-content:flex-end;gap:10px}.settlement-actions button{padding:11px;border:0;border-radius:9px}
+.journey-irumudi-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:14px 0;padding:14px;border:1px solid #f0d79f;border-radius:14px;background:#fffaf0}.journey-irumudi-summary h3,.journey-irumudi-summary p{margin:0}.journey-irumudi-summary small{color:#85621a}.journey-irumudi-summary button{padding:9px 12px;border:1px solid #dec27e;border-radius:9px;background:white;color:#6e4a05}

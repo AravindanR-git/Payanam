@@ -76,10 +76,80 @@ const ParticipantRepository = {
     await enqueueSync("participants", id, "DELETE", { id });
   },
 
-  async hydrateParticipantsFromSupabase(userId) {
+async hydrateParticipantsFromSupabase(userId) {
     if (!userId) return [];
     const { data } = await hydrateEntity(userId, 'participants');
     return data || [];
+  },
+
+  async getFinancialReferences(participantId) {
+    const allocations = await db.expensePaymentAllocations
+      .where("participantId")
+      .equals(participantId)
+      .toArray();
+
+    const contributions = await db.contributions
+      .where("participantId")
+      .equals(participantId)
+      .toArray();
+
+    return { allocations, contributions };
+  },
+
+  async hasFinancialRecords(participantId) {
+    const { allocations, contributions } = await this.getFinancialReferences(participantId);
+    return allocations.length > 0 || contributions.length > 0;
+  },
+
+  async deleteParticipant(id) {
+    await db.participants.delete(id);
+
+    await enqueueSync("participants", id, "DELETE", { id });
+  },
+
+  async deleteParticipantWithReassignment(participantId, reassignments) {
+    await db.transaction("rw", [
+      db.participants,
+      db.expensePaymentAllocations,
+      db.contributions,
+      db.pendingSync,
+    ], async () => {
+      for (const { allocationId, newType, newId } of reassignments.allocations) {
+        const updates = {
+          paymentSourceType: newType,
+          participantId: null,
+          donorId: null,
+          updatedAt: new Date().toISOString(),
+        };
+        if (newType === "participant") {
+          updates.participantId = newId;
+        } else if (newType === "donor") {
+          updates.donorId = newId;
+        }
+        await db.expensePaymentAllocations.update(allocationId, updates);
+        const full = await db.expensePaymentAllocations.get(allocationId);
+        await enqueueSync("expensePaymentAllocations", allocationId, "UPDATE", full);
+      }
+
+      for (const { contributionId, newType, newId } of reassignments.contributions) {
+        const updates = {
+          participantId: null,
+          donorName: null,
+          updatedAt: new Date().toISOString(),
+        };
+        if (newType === "participant") {
+          updates.participantId = newId;
+        } else if (newType === "donor") {
+          updates.donorName = newId;
+        }
+        await db.contributions.update(contributionId, updates);
+        const full = await db.contributions.get(contributionId);
+        await enqueueSync("contributions", contributionId, "UPDATE", full);
+      }
+
+      await db.participants.delete(participantId);
+      await enqueueSync("participants", participantId, "DELETE", { id: participantId });
+    });
   },
 };
 

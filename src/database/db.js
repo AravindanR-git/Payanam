@@ -332,6 +332,180 @@ db.version(9).stores({
   syncIdMap: "key,entity,localId,cloudId",
 });
 
+db.version(10)
+  .stores({
+    users: "id,email",
+
+    trips: "id,userId,status,tripType,tripName,createdAt",
+
+    participants: "id,tripId,type,name",
+
+    contributions:
+      "id,tripId,participantId,donorName,createdAt",
+
+    expenseCategories:
+      "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+
+    expenseItems:
+      "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed",
+
+    places: "id,name,displayOrder",
+
+    expenses:
+      "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus,paidByDonorId",
+
+    activities: "id,tripId,type,createdAt",
+
+    pendingSync:
+      "id,tableName,status,createdAt,attempts,error",
+
+    syncIdMap: "key,entity,localId,cloudId",
+  })
+  .upgrade(async (tx) => {
+    await tx.table("contributions")
+      .toCollection()
+      .modify((contribution) => {
+        contribution.donorName ??= null;
+        contribution.donorNote ??= null;
+      });
+  });
+
+db.version(11)
+  .stores({
+    users: "id,email",
+
+    trips: "id,userId,status,tripType,tripName,createdAt",
+
+    participants: "id,tripId,type,name",
+
+    contributions:
+      "id,tripId,participantId,donorName,createdAt",
+
+    expenseCategories:
+      "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+
+    expenseItems:
+      "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed",
+
+    places: "id,name,displayOrder",
+
+    expenses:
+      "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus,paidByDonorId",
+
+    activities: "id,tripId,type,createdAt",
+
+    pendingSync:
+      "id,tableName,status,createdAt,attempts,error",
+
+    syncIdMap: "key,entity,localId,cloudId",
+  })
+  .upgrade(async (tx) => {
+    await tx.table("expenses")
+      .toCollection()
+      .modify((expense) => {
+        expense.paidByDonorId ??= null;
+      });
+  });
+
+db.version(12)
+  .stores({
+    users: "id,email",
+
+    trips: "id,userId,status,tripType,tripName,createdAt",
+
+    participants: "id,tripId,type,name",
+
+    contributions:
+      "id,tripId,participantId,donorName,createdAt",
+
+    expenseCategories:
+      "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+
+    expenseItems:
+      "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed",
+
+    places: "id,name,displayOrder",
+
+    expenses:
+      "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus,paidByDonorId",
+
+    activities: "id,tripId,type,createdAt",
+
+    pendingSync:
+      "id,tableName,status,createdAt,attempts,error",
+
+    syncIdMap: "key,entity,localId,cloudId",
+
+    expensePaymentAllocations:
+      "id,expenseId,paymentSourceType,donorId,participantId,amount,createdAt",
+  })
+  .upgrade(async (tx) => {
+    await tx.table("expensePaymentAllocations")
+      .toCollection()
+      .modify((allocation) => {
+        allocation.createdAt ??= new Date().toISOString();
+        allocation.updatedAt ??= new Date().toISOString();
+      });
+  });
+
+db.version(13).stores({
+  users: "id,email", trips: "id,userId,status,tripType,tripName,createdAt",
+  participants: "id,tripId,type,name", contributions: "id,tripId,participantId,donorName,createdAt",
+  expenseCategories: "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+  expenseItems: "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed", places: "id,name,displayOrder",
+  expenses: "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus,paidByDonorId",
+  activities: "id,tripId,type,createdAt", pendingSync: "id,tableName,status,createdAt,attempts,error",
+  syncIdMap: "key,entity,localId,cloudId", expensePaymentAllocations: "id,expenseId,paymentSourceType,donorId,participantId,amount,createdAt",
+  transports: "id,userId,name,vehicleNumber,updatedAt,syncStatus",
+});
+
+db.version(14).stores({
+  users: "id,email", trips: "id,userId,status,tripType,tripName,createdAt",
+  participants: "id,tripId,type,name", contributions: "id,tripId,participantId,donorName,createdAt",
+  expenseCategories: "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+  expenseItems: "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed", places: "id,name,displayOrder",
+  expenses: "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus,paidByDonorId,&transportSettlementTripId",
+  activities: "id,tripId,type,createdAt", pendingSync: "id,tableName,status,createdAt,attempts,error",
+  syncIdMap: "key,entity,localId,cloudId", expensePaymentAllocations: "id,expenseId,paymentSourceType,donorId,participantId,amount,createdAt",
+  transports: "id,userId,name,vehicleNumber,updatedAt,syncStatus",
+});
+
+db.version(15).stores({
+  users: "id,email", trips: "id,userId,status,tripType,tripName,createdAt",
+  participants: "id,tripId,type,name", contributions: "id,tripId,participantId,donorName,createdAt",
+  expenseCategories: "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+  expenseItems: "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed", places: "id,name,displayOrder,tripId,categoryId",
+  expenses: "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus,paidByDonorId,&transportSettlementTripId",
+  activities: "id,tripId,type,createdAt", pendingSync: "id,tableName,status,createdAt,attempts,error",
+  syncIdMap: "key,entity,localId,cloudId", expensePaymentAllocations: "id,expenseId,paymentSourceType,donorId,participantId,amount,createdAt",
+  transports: "id,userId,name,vehicleNumber,updatedAt,syncStatus", placeCategories: "id,name,userId,displayOrder",
+});
+
+db.version(16).stores({
+  users: "id,email", trips: "id,userId,status,tripType,tripName,createdAt",
+  participants: "id,tripId,type,name", contributions: "id,tripId,participantId,donorName,createdAt",
+  expenseCategories: "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+  expenseItems: "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed", places: "id,name,displayOrder,tripId,categoryId",
+  expenses: "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus,paidByDonorId,&transportSettlementTripId",
+  activities: "id,tripId,type,createdAt", pendingSync: "id,tableName,status,createdAt,attempts,error,userId",
+  syncIdMap: "key,entity,localId,cloudId", expensePaymentAllocations: "id,expenseId,paymentSourceType,donorId,participantId,amount,createdAt",
+  transports: "id,userId,name,vehicleNumber,updatedAt,syncStatus", placeCategories: "id,name,userId,displayOrder",
+  accountSnapshots: "userId,updatedAt", activeAccount: "id",
+});
+
+db.version(17).stores({
+  users: "id,email", profiles: "id,userId,updatedAt",
+  trips: "id,userId,status,tripType,tripName,createdAt",
+  participants: "id,tripId,type,name", contributions: "id,tripId,participantId,donorName,createdAt",
+  expenseCategories: "id,userId,tripType,name,displayOrder,usageCount,lastUsed",
+  expenseItems: "id,categoryId,name,displayOrder,isDefault,usageCount,lastUsed", places: "id,name,displayOrder,tripId,categoryId",
+  expenses: "id,tripId,categoryId,expenseTime,updatedAt,paymentBy,syncStatus,paidByDonorId,&transportSettlementTripId",
+  activities: "id,tripId,type,createdAt", pendingSync: "id,tableName,status,createdAt,attempts,error,userId",
+  syncIdMap: "key,entity,localId,cloudId", expensePaymentAllocations: "id,expenseId,paymentSourceType,donorId,participantId,amount,createdAt",
+  transports: "id,userId,name,vehicleNumber,updatedAt,syncStatus", placeCategories: "id,name,userId,displayOrder",
+  accountSnapshots: "userId,updatedAt", activeAccount: "id",
+});
+
 function isValidUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value));
 }

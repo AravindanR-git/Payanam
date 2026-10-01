@@ -16,6 +16,7 @@ const TripRepository = {
     }
 
     const now = new Date().toISOString();
+    const closedContinuationTripIds = [];
 
     const trip = {
       id: generateUuid(),
@@ -42,6 +43,7 @@ const TripRepository = {
           endedAt &&
           now - new Date(endedAt).getTime() <= CONTINUE_WINDOW_MS
         ) {
+          closedContinuationTripIds.push(completedTrip.id);
           await db.trips.update(completedTrip.id, {
             continuationClosedAt: now,
           });
@@ -53,6 +55,10 @@ const TripRepository = {
 
     // Keep the Dexie transaction Dexie-only; enqueueing may schedule sync work.
     await enqueueSync("trips", trip.id, "CREATE", trip);
+    for (const completedTripId of closedContinuationTripIds) {
+      const closedTrip = await db.trips.get(completedTripId);
+      if (closedTrip) await enqueueSync("trips", completedTripId, "UPDATE", closedTrip);
+    }
 
     console.log('[TripRepository] createTrip: tripId=', trip.id, 'name=', trip.tripName, 'userId=', trip.userId, 'online=', navigator.onLine);
 
@@ -162,6 +168,8 @@ const TripRepository = {
     });
 
     const updated = await this.getTrip(id);
+
+    await enqueueSync("trips", id, "UPDATE", updated);
 
     console.log('[TripRepository] continueTrip: tripId=', id, 'online=', navigator.onLine);
 

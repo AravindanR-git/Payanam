@@ -1,0 +1,66 @@
+.payanam-logo-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #f7fbff;
+  font-weight: 750;
+  letter-spacing: .02em;
+}
+
+.payanam-launch-screen,
+.payanam-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 42%, #174d70 0%, #0a2a44 46%, #061522 100%);
+}
+
+.payanam-launch-glow {
+  position: absolute;
+  width: min(82vw, 420px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(47, 155, 211, .18);
+  filter: blur(70px);
+}
+
+.payanam-launch-logo {
+  position: relative;
+  width: min(70vw, 320px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 30px;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, .38);
+  animation: payanam-logo-arrive 1.15s cubic-bezier(.2, .75, .25, 1) both;
+}
+
+.payanam-transition {
+  animation: payanam-transition-out .7s ease-in-out both;
+}
+
+.payanam-transition-logo {
+  width: min(50vw, 210px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 24px;
+  animation: payanam-logo-arrive .55s ease-out both;
+}
+
+@keyframes payanam-logo-arrive {
+  from { opacity: 0; transform: translateY(7px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes payanam-transition-out {
+  0%, 78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .payanam-launch-logo,
+  .payanam-transition,
+  .payanam-transition-logo { animation: none; }
+}

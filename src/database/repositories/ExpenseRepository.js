@@ -3,8 +3,10 @@ import db from "../db";
 import ItemRepository from "./ItemRepository";
 import CategoryRepository from "./CategoryRepository";
 import LocationService from "../../services/LocationService";
+import PaymentAllocationRepository from "./PaymentAllocationRepository";
 import { enqueueSync } from "../../services/syncEnqueue";
 import { uploadEntity, hydrateEntity } from "../../services/supabaseSync";
+import { calculateRemainingDonorBalance, donorAllocationExceedsBalance } from "../../utils/donorBalance";
 
 const ExpenseRepository = {
   async createExpense(data) {
@@ -26,6 +28,8 @@ const ExpenseRepository = {
       ...data,
     };
 
+    await this.validateDonorAllocations(data.allocations || []);
+
     await db.expenses.add(expense);
 
     await ItemRepository.markUsed(
@@ -36,6 +40,15 @@ const ExpenseRepository = {
 
     if (expense.categoryId) {
       await CategoryRepository.markUsed(expense.categoryId);
+    }
+
+    if (data.allocations && data.allocations.length > 0) {
+      for (const allocation of data.allocations) {
+        await PaymentAllocationRepository.createAllocation({
+          expenseId: expense.id,
+          ...allocation,
+        });
+      }
     }
 
     await enqueueSync("expenses", expense.id, "CREATE", expense);
@@ -95,7 +108,55 @@ const ExpenseRepository = {
     );
   },
 
+  async getDonorAvailability(donorId, { excludeExpenseId = null } = {}) {
+    const contribution =
+      await db.contributions.get(donorId);
+
+    if (!contribution || !contribution.donorName) {
+      return 0;
+    }
+
+    const allocations = await PaymentAllocationRepository.getAllocationsByDonor(donorId);
+
+    // Older expenses may identify their donor without an allocation row.
+    // Count those once so historical spending cannot restore the original balance.
+    const legacyExpenses = await db.expenses
+      .where("paidByDonorId")
+      .equals(donorId)
+      .toArray();
+    return calculateRemainingDonorBalance({
+      contributionAmount: contribution.amount,
+      allocations,
+      expenses: legacyExpenses,
+      excludeExpenseId,
+    });
+  },
+
+  async validateDonorAllocations(allocations = [], { excludeExpenseId = null } = {}) {
+    const totals = new Map();
+    for (const allocation of allocations) {
+      if (allocation.paymentSourceType !== "donor" || !allocation.donorId) continue;
+      totals.set(allocation.donorId, (totals.get(allocation.donorId) || 0) + Number(allocation.amount || 0));
+    }
+    for (const [donorId, amount] of totals) {
+      const available = await this.getDonorAvailability(donorId, { excludeExpenseId });
+      if (donorAllocationExceedsBalance(amount, available)) {
+        const donor = await db.contributions.get(donorId);
+        throw new Error(`${donor?.donorName || "This donor"} has only ₹${available.toLocaleString("en-IN")} available.`);
+      }
+    }
+    return true;
+  },
+
+  async getExpenseAllocations(expenseId) {
+    return await PaymentAllocationRepository.getAllocationsByExpense(expenseId);
+  },
+
   async updateExpense(id, data) {
+    if (data.allocations) {
+      await this.validateDonorAllocations(data.allocations, { excludeExpenseId: id });
+    }
+
     await db.expenses.update(id, {
       ...data,
 
@@ -106,6 +167,17 @@ const ExpenseRepository = {
     });
 
     const updated = await db.expenses.get(id);
+
+    if (data.allocations) {
+      await PaymentAllocationRepository.deleteAllocationsByExpense(id);
+
+      for (const allocation of data.allocations) {
+        await PaymentAllocationRepository.createAllocation({
+          expenseId: id,
+          ...allocation,
+        });
+      }
+    }
 
     await enqueueSync("expenses", id, "UPDATE", { ...data, updatedAt: new Date().toISOString() });
 
@@ -118,10 +190,30 @@ const ExpenseRepository = {
     return updated;
   },
 
-  async deleteExpense(id) {
+async deleteExpense(id) {
+    await PaymentAllocationRepository.deleteAllocationsByExpense(id);
+
     await db.expenses.delete(id);
 
     await enqueueSync("expenses", id, "DELETE", { id });
+  },
+
+  async getAllocationsForParticipant(participantId) {
+    return await PaymentAllocationRepository.getAllocationsByParticipant(participantId);
+  },
+
+  async reassignAllocation(allocationId, newType, newId) {
+    const updates = {
+      paymentSourceType: newType,
+      participantId: null,
+      donorId: null,
+    };
+    if (newType === "participant") {
+      updates.participantId = newId;
+    } else if (newType === "donor") {
+      updates.donorId = newId;
+    }
+    return await PaymentAllocationRepository.updateAllocation(allocationId, updates);
   },
 
   async hydrateExpensesFromSupabase(userId) {

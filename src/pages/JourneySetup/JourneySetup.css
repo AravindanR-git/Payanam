@@ -191,3 +191,6 @@
     }
 
 }
+.trip-transport-config{display:grid;gap:12px;margin:12px 0;padding:16px;border:1px solid #ddd;border-radius:14px;background:var(--surface-primary,#fff)}
+.trip-transport-config label{display:grid;gap:6px}
+.trip-transport-config input,.trip-transport-config select,.journey-page select{max-width:100%;padding:11px;border:1px solid #ccc;border-radius:9px;font:inherit}

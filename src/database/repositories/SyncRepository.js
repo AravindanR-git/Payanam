@@ -2,7 +2,11 @@ import { generateUuid } from "../../utils/uuid";
 import db from "../db";
 
 const SyncRepository = {
-  async enqueue(tableName, recordId, operation, payload = null) {
+  async getActiveAccount() {
+    try { return await db.activeAccount.get("active"); } catch { return null; }
+  },
+
+  async enqueue(tableName, recordId, operation, payload = null, userId = null) {
     try {
       const entry = {
         id: generateUuid(),
@@ -10,6 +14,7 @@ const SyncRepository = {
         recordId,
         operation,
         payload,
+        userId: userId || payload?.userId || payload?.user_id || null,
         status: "PENDING",
         attempts: 0,
         error: null,

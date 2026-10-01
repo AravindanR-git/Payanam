@@ -1,6 +1,6 @@
 import { generateUuid } from "../../utils/uuid";
 import db from "../db";
-import SyncService from "../../services/syncService";
+import { enqueueSync } from "../../services/syncEnqueue";
 import { uploadEntity, hydrateEntity } from "../../services/supabaseSync";
 
 const ActivityRepository = {
@@ -18,7 +18,7 @@ const ActivityRepository = {
 
     await db.activities.add(activity);
 
-    SyncService.enqueue("activities", activity.id, "CREATE", activity);
+    await enqueueSync("activities", activity.id, "CREATE", activity);
 
     if (navigator.onLine) {
       uploadEntity('activities', activity).catch((error) => {

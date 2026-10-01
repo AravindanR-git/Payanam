@@ -1,0 +1,13 @@
+.guide-page{max-width:760px;margin:0 auto;padding:20px;color:var(--text-primary,#171717)}
+.guide-header{display:flex;align-items:flex-start;gap:14px;margin:8px 0 20px}
+.guide-brand-icon{width:42px;height:42px;flex:none;object-fit:cover;border-radius:13px}
+.guide-header>button{flex:0 0 auto;border:0;border-radius:10px;background:var(--surface-secondary,#f1f1f1);padding:10px;cursor:pointer}
+.guide-header h1{font-size:24px;margin:0 0 6px}.guide-header p{margin:0;color:var(--text-secondary,#687080);line-height:1.5}
+.guide-search{display:flex;align-items:center;gap:10px;padding:12px 14px;margin-bottom:16px;border:1px solid #dce1e8;border-radius:12px;background:var(--surface-primary,#fff)}
+.guide-search input{width:100%;border:0;outline:0;background:transparent;color:inherit;font:inherit}.guide-search button{border:0;background:transparent;color:#2766a7;cursor:pointer}
+.guide-content{display:grid;gap:10px}.guide-section{border:1px solid #e5e8ed;border-radius:14px;background:var(--surface-primary,#fff);overflow:hidden}
+.guide-section>summary{padding:16px;cursor:pointer;list-style:none;font-weight:650}.guide-section>summary::-webkit-details-marker{display:none}.guide-section>summary span{display:flex;align-items:center;gap:10px}.guide-section>summary span svg{color:#47759b;flex:none}
+.guide-section>p{margin:0;padding:0 16px 16px;line-height:1.65;color:var(--text-secondary,#4b5563)}
+.guide-question{margin:0 16px;border-top:1px solid #edf0f3}.guide-question>summary{padding:13px 0;cursor:pointer;font-weight:550}.guide-question>p{margin:0;padding:0 0 14px;line-height:1.55;color:var(--text-secondary,#4b5563)}
+.guide-no-results{padding:18px;color:var(--text-secondary,#687080)}
+@media(max-width:520px){.guide-page{padding:16px}.guide-header h1{font-size:21px}.guide-section>summary{padding:14px}}

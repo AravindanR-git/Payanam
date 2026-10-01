@@ -7,6 +7,7 @@ import Home from "./pages/Home/Home";
 import CreateTrip from "./pages/CreateTrip/CreateTrip";
 import JourneySetup from "./pages/JourneySetup/JourneySetup";
 import ThiruPayanam from "./pages/ThiruPayanam/ThiruPayanam";
+import Irumudi from "./pages/Irumudi/Irumudi";
 import Journey from "./pages/Journey/Journey";
 import ExpenseHistory from "./pages/ExpenseHistory/ExpenseHistory";
 import Participants from "./pages/Participants/Participants";
@@ -28,6 +29,10 @@ import Signup from "./pages/Signup/Signup";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import EmailCallback from "./pages/EmailCallback/EmailCallback";
 import Profile from "./pages/Profile/Profile";
+import Transport from "./pages/Settings/Transport";
+import TransportInsights from "./pages/Journey/TransportInsights";
+import Guide from "./pages/Guide/Guide";
+import PayanamIntro from "./components/PayanamBrand/PayanamIntro";
 
 import RequireAuth from "./components/RequireAuth";
 
@@ -87,6 +92,7 @@ function App() {
               <Route path="/email-callback" element={<EmailCallback />} />
 
               <Route path="/" element={<RequireAuth><Home /></RequireAuth>} />
+              <Route path="/guide" element={<RequireAuth><Guide /></RequireAuth>} />
 
               <Route
                 path="/create-trip"
@@ -102,11 +108,13 @@ function App() {
                 path="/thiru-payanam"
                 element={<RequireAuth><ThiruPayanam /></RequireAuth>}
               />
+              <Route path="/irumudi/:tripId" element={<RequireAuth><Irumudi /></RequireAuth>} />
 
               <Route
                 path="/journey"
                 element={<RequireAuth><Journey /></RequireAuth>}
               />
+              <Route path="/journey/:tripId/transport" element={<RequireAuth><TransportInsights /></RequireAuth>} />
 
               <Route
                 path="/expense-history"
@@ -163,6 +171,7 @@ function App() {
                 path="/settings"
                 element={<RequireAuth><Settings /></RequireAuth>}
               />
+              <Route path="/settings/transport" element={<RequireAuth><Transport /></RequireAuth>} />
 
               <Route
                 path="/profile"
@@ -189,6 +198,7 @@ function App() {
           </BrowserRouter>
 
       </div>
+      <PayanamIntro />
 
     </div>
 

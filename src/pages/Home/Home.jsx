@@ -10,6 +10,7 @@ import {
   Plus,
   Settings2,
   LogOut,
+  BookOpen,
 } from "lucide-react";
 
 import Header from "../../components/Header/Header";
@@ -20,6 +21,7 @@ import TripRepository from "../../database/repositories/TripRepository";
 import useLanguage from "../../i18n/useLanguage";
 import { useAuth } from "../../contexts/useAuth";
 import safeLogout from "../../services/safeLogout";
+import PayanamLogo from "../../components/PayanamBrand/PayanamLogo";
 import { onTripChange } from "../../services/tripSyncEvents";
 
 function getTimeBasedGreeting(t) {
@@ -89,6 +91,10 @@ function Home() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
     >
+      <div className="home-brand" aria-label="Payanam">
+        <PayanamLogo variant="icon" className="home-brand-icon" decorative />
+        <span>Payanam</span>
+      </div>
       <div className="language-switch">
         <Languages size={18} />
         <span>EN | தமிழ்</span>
@@ -158,6 +164,14 @@ function Home() {
           title={t("settings")}
           onClick={() => navigate("/settings")}
         />
+
+        <ListItem
+          icon={<BookOpen size={20} />}
+          title="Guide & Help"
+          description="Learn how Payanam works and find answers to common questions."
+          onClick={() => navigate("/guide")}
+        />
+
       </section>
     </motion.div>
   );

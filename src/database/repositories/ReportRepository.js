@@ -4,6 +4,8 @@ import ExpenseRepository from "./ExpenseRepository";
 import ContributionRepository from "./ContributionRepository";
 import CategoryRepository from "./CategoryRepository";
 import ItemRepository from "./ItemRepository";
+import { getTransportCalculation } from "../../utils/transportAccounting";
+import { getIrumudiSummary } from "../../utils/irumudi";
 
 const ReportRepository = {
   async getOverview(tripId) {
@@ -32,10 +34,8 @@ const ReportRepository = {
     const collected =
       initialContributions + additionalContributions;
 
-    const spent = expenses.reduce(
-      (sum, e) => sum + Number(e.amount || 0),
-      0
-    );
+    const transport = getTransportCalculation(trip?.transport, expenses);
+    const spent = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
     const locations = new Set(
       expenses
@@ -52,6 +52,8 @@ const ReportRepository = {
       memberCount: participants.length,
       locationCount: locations,
       recentExpenses: expenses.slice(0, 5),
+      transportCalculation: transport,
+      irumudiSummary: getIrumudiSummary(trip, participants),
     };
   },
 
@@ -61,6 +63,7 @@ const ReportRepository = {
     if (!trip) {
       return {
         trip: null,
+        irumudiSummary: null,
         daysActive: 0,
         totalSpent: 0,
         balance: 0,
@@ -315,6 +318,7 @@ const ReportRepository = {
 
     return {
       trip,
+      irumudiSummary: getIrumudiSummary(trip, participants),
       daysActive,
       totalSpent,
       balance,

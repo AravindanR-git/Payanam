@@ -13,6 +13,7 @@ import "leaflet/dist/leaflet.css";
 import "./LocationAnalysis.css";
 import InsightsNav from "../../components/Insights/InsightsNav";
 import ExpenseRepository from "../../database/repositories/ExpenseRepository";
+import PlaceRepository from "../../database/repositories/PlaceRepository";
 import useLanguage from "../../i18n/useLanguage";
 
 const INDIA_CENTER = [20.5937, 78.9629];
@@ -107,6 +108,9 @@ export default function LocationAnalysis() {
   const [selectedMapLocation, setSelectedMapLocation] =
     useState(null);
   const [expenses, setExpenses] = useState([]);
+  const [places, setPlaces] = useState([]);
+  const [view, setView] = useState("expenses");
+  const [selectedPlace, setSelectedPlace] = useState(null);
 
   useEffect(() => {
     loadLocations();
@@ -115,6 +119,7 @@ export default function LocationAnalysis() {
   async function loadLocations() {
     const expenseList =
       await ExpenseRepository.getExpensesByTrip(tripId);
+    setPlaces(await PlaceRepository.getPlaces(tripId));
 
     setExpenses(expenseList);
 
@@ -198,13 +203,14 @@ export default function LocationAnalysis() {
         <InsightsNav />
       <h2>{t("locationInsights")}</h2>
 
+      <div className="location-view-toggle"><button className={view === "expenses" ? "active" : ""} onClick={() => setView("expenses")}>Expense by Location</button><button className={view === "places" ? "active" : ""} onClick={() => setView("places")}>Places ({places.length})</button></div>
       <div className="location-map-card">
         <div className="location-map-header">
           <div>
-            <h3>{t("expenseMap")}</h3>
+            <h3>{view === "expenses" ? t("expenseMap") : "Trip route & saved places"}</h3>
             <p>{t("tapMarkerToView")}</p>
           </div>
-          <span>{mapLocations.length} {t("gpsLocations")}</span>
+          <span>{view === "expenses" ? `${mapLocations.length} ${t("gpsLocations")}` : `${places.filter((p) => p.latitude != null && p.longitude != null).length} places`}</span>
         </div>
 
         <MapContainer
@@ -218,11 +224,11 @@ export default function LocationAnalysis() {
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <MapBounds locations={mapLocations} />
+          <MapBounds locations={view === "expenses" ? mapLocations : [...mapLocations, ...places.filter((p) => p.latitude != null && p.longitude != null)]} />
 
           <RouteLine expenses={expenses} />
 
-          {mapLocations.map((location) => (
+          {view === "expenses" && mapLocations.map((location) => (
             <Marker
               key={location.id}
               position={[location.latitude, location.longitude]}
@@ -232,16 +238,19 @@ export default function LocationAnalysis() {
               }}
             />
           ))}
+          {view === "places" && places.filter((place) => place.latitude != null && place.longitude != null).map((place) => <Marker key={place.id} position={[Number(place.latitude), Number(place.longitude)]} icon={divIcon({ className: "place-route-marker", html: `<span>${place.photo ? `<img src="${place.photo}" alt=""/>` : "📍"}</span>`, iconSize: [42, 42], iconAnchor: [21, 21] })} eventHandlers={{ click: () => setSelectedPlace(place) }} />)}
         </MapContainer>
 
-        {mapLocations.length === 0 && (
+        {view === "expenses" && mapLocations.length === 0 && (
           <p className="location-map-empty">
             {t("noGpsLocations")}
           </p>
         )}
       </div>
 
-      {selectedMapLocation && (
+      {view === "places" && (selectedPlace ? <div className="location-expense-summary">{selectedPlace.photo && <img src={selectedPlace.photo} alt="" style={{width:100,height:80,objectFit:"cover",borderRadius:10}}/>}<h3>{selectedPlace.name}</h3><p>{selectedPlace.categoryName}{selectedPlace.rating ? ` · ${"★".repeat(selectedPlace.rating)}` : ""}</p>{selectedPlace.description && <p>{selectedPlace.description}</p>}</div> : <p>{places.length ? "Select a place marker to view its details." : "No saved places for this trip yet."}</p>)}
+
+      {view === "expenses" && selectedMapLocation && (
         <div className="location-expense-summary">
           <div className="location-summary-heading">
             <div>
@@ -276,7 +285,7 @@ export default function LocationAnalysis() {
         </div>
       )}
 
-      <div className="summary-card">
+      {view === "expenses" && <><div className="summary-card">
         <h3>{locations.length}</h3>
         <p>{t("locationsVisited")}</p>
 
@@ -306,7 +315,7 @@ export default function LocationAnalysis() {
             </strong>
           </div>
         ))}
-      </div>
+      </div></>}
     </div>
   );
 }

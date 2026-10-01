@@ -1,6 +1,6 @@
 import "./ThiruPayanam.css";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, Landmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,6 +13,7 @@ import TripRepository from "../../database/repositories/TripRepository";
 import ParticipantRepository from "../../database/repositories/ParticipantRepository";
 import useLanguage from "../../i18n/useLanguage";
 import { useAuth } from "../../contexts/useAuth";
+import TransportSetup from "../../components/TransportSetup/TransportSetup";
 
 const TEMPLE_OPTIONS = ["Sabarimala", "Tirumala", "Custom Temple"];
 
@@ -27,6 +28,7 @@ function ThiruPayanam() {
     useState(1000);
   const [pilgrims, setPilgrims] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
+  const transportSetupRef = useRef(null);
 
   const templeName =
     templeOption === "Custom Temple"
@@ -63,12 +65,15 @@ function ThiruPayanam() {
     setIsCreating(true);
 
     try {
+      const transport = await transportSetupRef.current.getSnapshot();
+      if (transport === false) return;
       const trip = await TripRepository.createTrip({
         userId: user?.id,
         tripName: journeyName.trim(),
         tripType: "temple",
         templeName,
         defaultContributionPerPerson: contributionPerPerson,
+        transport,
       });
 
       await ParticipantRepository.createMany(
@@ -86,7 +91,7 @@ function ThiruPayanam() {
         }))
       );
 
-      navigate("/journey");
+      navigate(templeName === "Sabarimala" ? `/irumudi/${trip.id}` : "/journey");
     } catch (error) {
       console.error(error);
       alert(t("unableToCreateTempleJourney"));
@@ -158,6 +163,12 @@ function ThiruPayanam() {
             setContributionPerPerson(Number(event.target.value))
           }
         />
+      </Card>
+
+      <Card className="temple-setup-card">
+        <h2>Transport (optional)</h2>
+        <p>Leave this empty to keep the walking pilgrimage flow.</p>
+        <TransportSetup ref={transportSetupRef} userId={user?.id} />
       </Card>
 
       <FamilySection

@@ -10,6 +10,25 @@
 
 }
 
+.home-brand {
+    display:flex;
+    align-items:center;
+    gap:9px;
+    width:max-content;
+    margin-bottom:14px;
+    color:#123b57;
+    font-size:19px;
+    font-weight:750;
+    letter-spacing:-.03em;
+}
+
+.home-brand-icon {
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    object-fit:cover;
+}
+
 .language-switch{
 
     display:flex;

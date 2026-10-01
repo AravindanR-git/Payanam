@@ -61,7 +61,7 @@ function Categories() {
 
   return (
     <div className="categories-page">
-      <button className="back-btn" onClick={() => navigate(-1)}>
+      <button className="back-btn" onClick={() => navigate("/")}>
         <ArrowLeft size={20} />
       </button>
 

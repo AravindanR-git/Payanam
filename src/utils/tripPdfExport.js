@@ -39,6 +39,7 @@ export function generateTripPrintData(trip, insights, expenses, language = "en")
     topCategories: insights.topCategories || [],
     topLocations: insights.topLocations || [],
     expensesByLocation: locationMap,
+    irumudiSummary: insights.irumudiSummary || null,
     recentExpenses: expenses.slice(0, 20),
     t,
   };
@@ -143,6 +144,19 @@ export function openTripPrintWindow(printData) {
             </div>
           </div>
         </div>
+
+        ${printData.irumudiSummary ? `
+          <div class="section irumudi-print-section">
+            <h2>Sabarimala Irumudi Collection (separate from Trip Expenses)</h2>
+            <div class="summary-grid">
+              <div class="summary-card"><div class="label">Amount per person</div><div class="value">${formatINR(printData.irumudiSummary.amountPerPerson)}</div></div>
+              <div class="summary-card"><div class="label">Participants</div><div class="value">${printData.irumudiSummary.totalParticipants}</div></div>
+              <div class="summary-card"><div class="label">Expected Irumudi</div><div class="value">${formatINR(printData.irumudiSummary.expectedTotal)}</div></div>
+              <div class="summary-card"><div class="label">Collected</div><div class="value">${formatINR(printData.irumudiSummary.collectedAmount)}</div></div>
+              <div class="summary-card"><div class="label">Pending</div><div class="value">${formatINR(printData.irumudiSummary.pendingAmount)}</div></div>
+            </div>
+            <p style="margin-top:12px">Pending Participants: ${printData.irumudiSummary.pendingPeople.map((person) => `${person.participantName} (${person.memberType} ${person.memberIndex})`).join(", ") || "None"}</p>
+          </div>` : ""}
 
         <div class="section">
           <h2>${t("participantsAndShares")}</h2>

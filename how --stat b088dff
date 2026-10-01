@@ -1,0 +1,5 @@
+[33mb088dff[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix: repair offline-first Supabase synchronization
+[33m85ff511[m feat: complete realtime offline sync for categories and items
+[33mf5ea791[m feat: add Supabase cloud synchronization for all app entities
+[33m306901d[m feat: add Supabase trip synchronization
+[33m4a180e6[m feat: add OTP password recovery flow
